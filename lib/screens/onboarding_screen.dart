@@ -10,116 +10,167 @@ class OnboardingScreen extends StatefulWidget {
 class _OnboardingScreenState extends State<OnboardingScreen> {
   int currentPage = 0;
 
-  final PageController controller = PageController();
+  final PageController pageController = PageController();
+
+  @override
+  void dispose() {
+    pageController.dispose();
+    super.dispose();
+  }
+
+  void nextPageOrStart() {
+    if (currentPage < demoData.length - 1) {
+      pageController.nextPage(
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
+    } else {
+      Navigator.pop(context); // kembali ke halaman sebelumnya
+      // kalau mau ke home:
+      // Navigator.pushReplacementNamed(context, '/home');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
+
       appBar: AppBar(
-        title: const Text("Onboarding"),
+        backgroundColor: Colors.white,
+        elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () {
-            Navigator.pop(context); // kembali
-          },
+          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          onPressed: () => Navigator.pop(context),
         ),
       ),
 
-      body: Column(
-        children: [
-          Expanded(
-            child: PageView.builder(
-              controller: controller,
-              itemCount: demoData.length,
-              onPageChanged: (value) {
-                setState(() {
-                  currentPage = value;
-                });
-              },
-              itemBuilder: (context, index) => OnboardContent(
-                title: demoData[index]["title"],
-                text: demoData[index]["text"],
-                image: demoData[index]["image"],
-              ),
-            ),
-          ),
+      body: SafeArea(
+        child: Column(
+          children: [
+            const Spacer(flex: 1),
 
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: List.generate(
-              demoData.length,
-              (index) => Container(
-                margin: const EdgeInsets.all(4),
-                width: currentPage == index ? 18 : 8,
-                height: 8,
-                decoration: BoxDecoration(
-                  color: currentPage == index
-                      ? Colors.green
-                      : Colors.grey.shade400,
-                  borderRadius: BorderRadius.circular(20),
+            Expanded(
+              flex: 14,
+              child: PageView.builder(
+                controller: pageController,
+                itemCount: demoData.length,
+                onPageChanged: (value) {
+                  setState(() {
+                    currentPage = value;
+                  });
+                },
+                itemBuilder: (context, index) => OnboardContent(
+                  illustration: demoData[index]["illustration"],
+                  title: demoData[index]["title"],
+                  text: demoData[index]["text"],
                 ),
               ),
             ),
-          ),
 
-          const SizedBox(height: 20),
+            const Spacer(),
 
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                minimumSize: const Size(double.infinity, 50),
-                backgroundColor: Colors.green,
-              ),
-
-              onPressed: () {
-                if (currentPage == demoData.length - 1) {
-                  Navigator.pop(context); // selesai onboarding
-                } else {
-                  controller.nextPage(
-                    duration: const Duration(milliseconds: 300),
-                    curve: Curves.easeInOut,
-                  );
-                }
-              },
-
-              child: Text(
-                currentPage == demoData.length - 1 ? "GET STARTED" : "NEXT",
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(
+                demoData.length,
+                (index) => DotIndicator(isActive: index == currentPage),
               ),
             ),
-          ),
-        ],
+
+            const Spacer(flex: 2),
+
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: ElevatedButton(
+                onPressed: nextPageOrStart,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF22A45D),
+                  foregroundColor: Colors.white,
+                  minimumSize: const Size(double.infinity, 45),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: Text(
+                  currentPage == demoData.length - 1 ? "GET STARTED" : "NEXT",
+                ),
+              ),
+            ),
+
+            const Spacer(),
+          ],
+        ),
       ),
     );
   }
 }
 
 class OnboardContent extends StatelessWidget {
-  final String title, text, image;
-
   const OnboardContent({
     super.key,
+    required this.illustration,
     required this.title,
     required this.text,
-    required this.image,
   });
+
+  final String? illustration, title, text;
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Image.asset(image, height: 250),
-          const SizedBox(height: 30),
-          Text(
-            title,
-            style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
+    return Column(
+      children: [
+        Expanded(
+          child: AspectRatio(
+            aspectRatio: 1,
+            child: Image.network(
+              illustration!,
+              fit: BoxFit.contain,
+              errorBuilder: (context, error, stackTrace) {
+                return const Icon(Icons.image_not_supported, size: 120);
+              },
+            ),
           ),
-          const SizedBox(height: 15),
-          Text(text, textAlign: TextAlign.center),
-        ],
+        ),
+        const SizedBox(height: 16),
+        Text(
+          title!,
+          style: Theme.of(
+            context,
+          ).textTheme.titleLarge!.copyWith(fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          text!,
+          style: Theme.of(context).textTheme.bodyMedium,
+          textAlign: TextAlign.center,
+        ),
+      ],
+    );
+  }
+}
+
+class DotIndicator extends StatelessWidget {
+  const DotIndicator({
+    super.key,
+    this.isActive = false,
+    this.activeColor = const Color(0xFF22A45D),
+    this.inActiveColor = const Color(0xFF868686),
+  });
+
+  final bool isActive;
+  final Color activeColor, inActiveColor;
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 250),
+      margin: const EdgeInsets.symmetric(horizontal: 8),
+      height: 5,
+      width: isActive ? 18 : 8,
+      decoration: BoxDecoration(
+        color: isActive ? activeColor : inActiveColor.withOpacity(0.25),
+        borderRadius: BorderRadius.circular(20),
       ),
     );
   }
@@ -127,18 +178,21 @@ class OnboardContent extends StatelessWidget {
 
 List<Map<String, dynamic>> demoData = [
   {
-    "image": "assets/img/BG.jpg",
+    "illustration": "https://i.postimg.cc/L43CKddq/Illustrations.png",
     "title": "All your favorites",
-    "text": "Best food delivered fast",
+    "text":
+        "Order from the best local restaurants \nwith easy, on-demand delivery.",
   },
   {
-    "image": "assets/img/BG.jpg",
+    "illustration": "https://i.postimg.cc/xTjs9sY6/Illustrations-1.png",
     "title": "Free delivery offers",
-    "text": "Special promo for you",
+    "text":
+        "Free delivery for new customers via Apple Pay\nand other payment methods.",
   },
   {
-    "image": "assets/img/BG.jpg",
+    "illustration": "https://i.postimg.cc/6qcYdZVV/Illustrations-2.png",
     "title": "Choose your food",
-    "text": "Many menus available",
+    "text":
+        "Easily find your type of food craving and\nyou’ll get delivery in wide range.",
   },
 ];
