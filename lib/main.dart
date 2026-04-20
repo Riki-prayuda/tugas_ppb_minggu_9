@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-// import sesuai file yang sudah kamu buat
+// ================= IMPORT SCREENS =================
 import 'screens/onboarding_screen.dart';
 import 'screens/home_page.dart';
 import 'screens/profile_detail_page.dart';
@@ -16,26 +16,37 @@ import 'screens/restaurant_details_page.dart';
 import 'screens/restaurant_featured_partners_page.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
   runApp(const MyApp());
 }
 
+// ======================================================
+// MAIN APP
+// ======================================================
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Food App',
+      title: 'Food Delivery App',
       debugShowCheckedModeBanner: false,
+
       theme: ThemeData(
+        useMaterial3: false,
         primarySwatch: Colors.orange,
         scaffoldBackgroundColor: Colors.white,
+        visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
+
       home: const MainScreen(),
     );
   }
 }
 
+// ======================================================
+// MAIN SCREEN
+// ======================================================
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
 
@@ -46,32 +57,45 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   int currentIndex = 0;
 
-  final List<Widget> pages = const [
-    FoodAppHomeScreen(),
-    FeaturedScreen(),
-    ProfileScreen(),
+  // ================= PAGE LIST =================
+  final List<Widget> pages = [
+    const FoodAppHomeScreen(),
+    const FeaturedScreen(),
+    const ProfileScreen(),
   ];
 
   final List<String> titles = ["Home", "Restaurants", "Profile"];
 
+  // ================= CHANGE PAGE =================
   void changePage(int index) {
     setState(() {
       currentIndex = index;
     });
+
     Navigator.pop(context);
   }
 
+  // ================= OPEN PAGE =================
   void openPage(Widget page) {
     Navigator.pop(context);
+
     Navigator.push(context, MaterialPageRoute(builder: (_) => page));
   }
 
+  // ======================================================
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(titles[currentIndex]), centerTitle: true),
+      appBar: AppBar(
+        title: Text(titles[currentIndex]),
+        centerTitle: true,
+        backgroundColor: Colors.orange,
+        foregroundColor: Colors.white,
+      ),
 
-      // ================= DRAWER =================
+      // ==================================================
+      // DRAWER
+      // ==================================================
       drawer: Drawer(
         child: ListView(
           padding: EdgeInsets.zero,
@@ -79,13 +103,14 @@ class _MainScreenState extends State<MainScreen> {
             const UserAccountsDrawerHeader(
               decoration: BoxDecoration(color: Colors.orange),
               accountName: Text("Food Delivery App"),
-              accountEmail: Text("flutterlibrary.com"),
+              accountEmail: Text("Flutter Project"),
               currentAccountPicture: CircleAvatar(
                 backgroundColor: Colors.white,
                 child: Icon(Icons.fastfood, color: Colors.orange, size: 35),
               ),
             ),
 
+            // ================= MAIN MENU =================
             const Padding(
               padding: EdgeInsets.only(left: 16, top: 8),
               child: Text(
@@ -114,6 +139,7 @@ class _MainScreenState extends State<MainScreen> {
 
             const Divider(),
 
+            // ================= OTHER PAGES =================
             const Padding(
               padding: EdgeInsets.only(left: 16, top: 8),
               child: Text(
@@ -148,7 +174,7 @@ class _MainScreenState extends State<MainScreen> {
 
             ListTile(
               leading: const Icon(Icons.search),
-              title: const Text("Search Details"),
+              title: const Text("Search"),
               onTap: () => openPage(const SearchScreen()),
             ),
 
@@ -185,7 +211,7 @@ class _MainScreenState extends State<MainScreen> {
             const Divider(),
 
             ListTile(
-              leading: const Icon(Icons.exit_to_app),
+              leading: const Icon(Icons.close),
               title: const Text("Close Drawer"),
               onTap: () => Navigator.pop(context),
             ),
@@ -193,18 +219,28 @@ class _MainScreenState extends State<MainScreen> {
         ),
       ),
 
-      // ================= BODY =================
-      body: pages[currentIndex],
+      // ==================================================
+      // BODY
+      // ==================================================
+      body: SafeArea(
+        child: IndexedStack(index: currentIndex, children: pages),
+      ),
 
-      // ================= BOTTOM NAVIGATION =================
+      // ==================================================
+      // BOTTOM NAVIGATION
+      // ==================================================
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: currentIndex,
         selectedItemColor: Colors.orange,
+        unselectedItemColor: Colors.grey,
+        showUnselectedLabels: true,
+
         onTap: (index) {
           setState(() {
             currentIndex = index;
           });
         },
+
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
           BottomNavigationBarItem(
