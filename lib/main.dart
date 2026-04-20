@@ -1,5 +1,20 @@
 import 'package:flutter/material.dart';
 
+// import sesuai file yang sudah kamu buat
+import 'screens/onboarding_screen.dart';
+import 'screens/home_page.dart';
+import 'screens/profile_detail_page.dart';
+import 'screens/add_to_order_page.dart';
+import 'screens/order_details_page.dart';
+import 'screens/filters_page.dart';
+import 'screens/search_details_page.dart';
+import 'screens/forgot_password_page.dart';
+import 'screens/reset_email_page.dart';
+import 'screens/sign_in_page.dart';
+import 'screens/sign_up_page.dart';
+import 'screens/restaurant_details_page.dart';
+import 'screens/restaurant_featured_partners_page.dart';
+
 void main() {
   runApp(const MyApp());
 }
@@ -7,116 +22,198 @@ void main() {
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'Food App',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        primarySwatch: Colors.orange,
+        scaffoldBackgroundColor: Colors.white,
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      home: const MainScreen(),
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
+class MainScreen extends StatefulWidget {
+  const MainScreen({super.key});
 
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  State<MainScreen> createState() => _MainScreenState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+class _MainScreenState extends State<MainScreen> {
+  int currentIndex = 0;
 
-  void _incrementCounter() {
+  final List<Widget> pages = const [
+    FoodAppHomeScreen(),
+    FeaturedScreen(),
+    ProfileScreen(),
+  ];
+
+  final List<String> titles = ["Home", "Restaurants", "Profile"];
+
+  void changePage(int index) {
     setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
+      currentIndex = index;
     });
+    Navigator.pop(context);
+  }
+
+  void openPage(Widget page) {
+    Navigator.pop(context);
+    Navigator.push(context, MaterialPageRoute(builder: (_) => page));
   }
 
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
     return Scaffold(
-      appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
-      ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text('You have pushed the button this many times:'),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
+      appBar: AppBar(title: Text(titles[currentIndex]), centerTitle: true),
+
+      // ================= DRAWER =================
+      drawer: Drawer(
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: [
+            const UserAccountsDrawerHeader(
+              decoration: BoxDecoration(color: Colors.orange),
+              accountName: Text("Food Delivery App"),
+              accountEmail: Text("flutterlibrary.com"),
+              currentAccountPicture: CircleAvatar(
+                backgroundColor: Colors.white,
+                child: Icon(Icons.fastfood, color: Colors.orange, size: 35),
+              ),
+            ),
+
+            const Padding(
+              padding: EdgeInsets.only(left: 16, top: 8),
+              child: Text(
+                "Main Menu",
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+
+            ListTile(
+              leading: const Icon(Icons.home),
+              title: const Text("Home"),
+              onTap: () => changePage(0),
+            ),
+
+            ListTile(
+              leading: const Icon(Icons.restaurant),
+              title: const Text("Restaurants"),
+              onTap: () => changePage(1),
+            ),
+
+            ListTile(
+              leading: const Icon(Icons.person),
+              title: const Text("Profile"),
+              onTap: () => changePage(2),
+            ),
+
+            const Divider(),
+
+            const Padding(
+              padding: EdgeInsets.only(left: 16, top: 8),
+              child: Text(
+                "Other Pages",
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+
+            ListTile(
+              leading: const Icon(Icons.slideshow),
+              title: const Text("Onboarding"),
+              onTap: () => openPage(const OnboardingScreen()),
+            ),
+
+            ListTile(
+              leading: const Icon(Icons.login),
+              title: const Text("Sign In"),
+              onTap: () => openPage(const SignInScreen()),
+            ),
+
+            ListTile(
+              leading: const Icon(Icons.app_registration),
+              title: const Text("Sign Up"),
+              onTap: () => openPage(const SignUpScreen()),
+            ),
+
+            ListTile(
+              leading: const Icon(Icons.filter_alt),
+              title: const Text("Filters"),
+              onTap: () => openPage(const FilterScreen()),
+            ),
+
+            ListTile(
+              leading: const Icon(Icons.search),
+              title: const Text("Search Details"),
+              onTap: () => openPage(const SearchScreen()),
+            ),
+
+            ListTile(
+              leading: const Icon(Icons.restaurant_menu),
+              title: const Text("Restaurant Details"),
+              onTap: () => openPage(const RestaurantDetailsScreen()),
+            ),
+
+            ListTile(
+              leading: const Icon(Icons.add_shopping_cart),
+              title: const Text("Add To Order"),
+              onTap: () => openPage(const AddToOrderScrreen()),
+            ),
+
+            ListTile(
+              leading: const Icon(Icons.receipt_long),
+              title: const Text("Order Details"),
+              onTap: () => openPage(const OrderDetailsScreen()),
+            ),
+
+            ListTile(
+              leading: const Icon(Icons.lock_outline),
+              title: const Text("Forgot Password"),
+              onTap: () => openPage(const ForgotPasswordScreen()),
+            ),
+
+            ListTile(
+              leading: const Icon(Icons.restart_alt),
+              title: const Text("Reset Password"),
+              onTap: () => openPage(const ResetEmailSentScreen()),
+            ),
+
+            const Divider(),
+
+            ListTile(
+              leading: const Icon(Icons.exit_to_app),
+              title: const Text("Close Drawer"),
+              onTap: () => Navigator.pop(context),
             ),
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
+
+      // ================= BODY =================
+      body: pages[currentIndex],
+
+      // ================= BOTTOM NAVIGATION =================
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: currentIndex,
+        selectedItemColor: Colors.orange,
+        onTap: (index) {
+          setState(() {
+            currentIndex = index;
+          });
+        },
+        items: const [
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.restaurant),
+            label: "Restaurant",
+          ),
+          BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profile"),
+        ],
+      ),
     );
   }
 }
