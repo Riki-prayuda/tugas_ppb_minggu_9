@@ -1,262 +1,351 @@
-import 'dart:io';
-
-import 'package:flutter/cupertino.dart';
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 
-class OrderDetailsScreen extends StatelessWidget {
+class OrderDetailsScreen extends StatefulWidget {
   const OrderDetailsScreen({super.key});
+
+  @override
+  State<OrderDetailsScreen> createState() =>
+      _OrderDetailsScreenState();
+}
+
+class _OrderDetailsScreenState
+    extends State<OrderDetailsScreen> {
+  final String apiUrl =
+      "https://api.ppb.widiarrohman.my.id/api/2026/uts/A/kelompok1/food-delivery/cart";
+
+  List cartItems = [];
+  bool isLoading = true;
+
+  int subtotal = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    fetchCart();
+  }
+
+  /// ==========================
+  /// FETCH CART API
+  /// ==========================
+  Future<void> fetchCart() async {
+    try {
+      final response =
+          await http.get(Uri.parse(apiUrl));
+
+      final data =
+          jsonDecode(response.body);
+
+      cartItems = data["data"];
+
+      subtotal = 0;
+      for (var item in cartItems) {
+        subtotal +=
+            item["total_price"]
+                as int;
+      }
+
+      setState(() {
+        isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
+
+  String rupiah(int value) {
+    return "Rp $value";
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor:
+          const Color(0xffF8F9FD),
+
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        title: const Text("Your Orders"),
-      ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Column(
-            children: [
-              const SizedBox(height: 16),
-              // List of cart items
-              ...List.generate(
-                demoItems.length,
-                (index) => Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                  child: OrderedItemCard(
-                    title: demoItems[index]["title"],
-                    description:
-                        "Shortbread, chocolate turtle cookies, and red velvet.",
-                    numOfItem: demoItems[index]["numOfItem"],
-                    price: demoItems[index]["price"].toDouble(),
-                  ),
-                ),
-              ),
-              const PriceRow(text: "Subtotal", price: 28.0),
-              const SizedBox(height: 8),
-              const PriceRow(text: "Delivery", price: 0),
-              const SizedBox(height: 8),
-              const TotalPrice(price: 20),
-              const SizedBox(height: 32),
-              PrimaryButton(
-                text: "Checkout (\$20.10)",
-                press: () {},
-              ),
-            ],
+        backgroundColor:
+            Colors.transparent,
+        elevation: 0,
+        centerTitle: true,
+        title: const Text(
+          "Your Cart",
+          style: TextStyle(
+            color: Colors.black,
+            fontWeight:
+                FontWeight.bold,
           ),
         ),
       ),
-    );
-  }
-}
 
-class PrimaryButton extends StatelessWidget {
-  final String text;
-  final GestureTapCallback press;
-
-  const PrimaryButton({super.key, required this.text, required this.press});
-
-  @override
-  Widget build(BuildContext context) {
-    EdgeInsets verticalPadding = const EdgeInsets.symmetric(vertical: 16);
-    return SizedBox(
-      width: double.infinity,
-      child: Platform.isIOS
-          ? CupertinoButton(
-              padding: verticalPadding,
-              color: const Color(0xFF22A45D),
-              onPressed: press,
-              child: buildText(context),
+      body: isLoading
+          ? const Center(
+              child:
+                  CircularProgressIndicator(),
             )
-          : ElevatedButton(
-              style: TextButton.styleFrom(
-                padding: verticalPadding,
-                backgroundColor: const Color(0xFF22A45D),
-              ),
-              onPressed: press,
-              child: buildText(context),
-            ),
-    );
-  }
-
-  Text buildText(BuildContext context) {
-    return Text(
-      text.toUpperCase(),
-      style: const TextStyle(
-        color: Colors.white,
-        fontSize: 14,
-        fontWeight: FontWeight.bold,
-      ),
-    );
-  }
-}
-
-class TotalPrice extends StatelessWidget {
-  const TotalPrice({
-    super.key,
-    required this.price,
-  });
-
-  final double price;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        const Text.rich(
-          TextSpan(
-            text: "Total ",
-            style: TextStyle(
-                color: Color(0xFF22A45D), fontWeight: FontWeight.w500),
-            children: [
-              TextSpan(
-                text: "(incl. VAT)",
-                style: TextStyle(fontWeight: FontWeight.normal),
-              ),
-            ],
-          ),
-        ),
-        Text(
-          "\$$price",
-          style: const TextStyle(
-              color: Color(0xFF22A45D), fontWeight: FontWeight.w500),
-        ),
-      ],
-    );
-  }
-}
-
-class PriceRow extends StatelessWidget {
-  const PriceRow({
-    super.key,
-    required this.text,
-    required this.price,
-  });
-
-  final String text;
-  final double price;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          text,
-          style: const TextStyle(color: Color(0xFF010F07)),
-        ),
-        Text(
-          "\$$price",
-          style: const TextStyle(color: Color(0xFF010F07)),
-        )
-      ],
-    );
-  }
-}
-
-class OrderedItemCard extends StatelessWidget {
-  const OrderedItemCard({
-    super.key,
-    required this.numOfItem,
-    required this.title,
-    required this.description,
-    required this.price,
-  });
-  final int numOfItem;
-  final String? title, description;
-  final double? price;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            NumOfItems(numOfItem: numOfItem),
-            const SizedBox(width: 12),
-            Expanded(
+          : Padding(
+              padding:
+                  const EdgeInsets.all(
+                      16),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    title!,
-                    style: Theme.of(context).textTheme.titleMedium,
+
+                  /// LIST ITEM
+                  Expanded(
+                    child:
+                        ListView.builder(
+                      itemCount:
+                          cartItems.length,
+                      itemBuilder:
+                          (context,
+                              index) {
+                        final item =
+                            cartItems[
+                                index];
+
+                        return Container(
+                          margin:
+                              const EdgeInsets.only(
+                                  bottom:
+                                      16),
+                          padding:
+                              const EdgeInsets.all(
+                                  14),
+                          decoration:
+                              BoxDecoration(
+                            color: Colors
+                                .white,
+                            borderRadius:
+                                BorderRadius.circular(
+                                    18),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors
+                                    .black
+                                    .withOpacity(
+                                        0.05),
+                                blurRadius:
+                                    8,
+                              )
+                            ],
+                          ),
+                          child:
+                              Row(
+                            children: [
+
+                              /// COUNT
+                              Container(
+                                width:
+                                    40,
+                                height:
+                                    40,
+                                alignment:
+                                    Alignment.center,
+                                decoration:
+                                    BoxDecoration(
+                                  color: Colors
+                                      .orange
+                                      .withOpacity(
+                                          0.1),
+                                  borderRadius:
+                                      BorderRadius.circular(
+                                          12),
+                                ),
+                                child:
+                                    Text(
+                                  item["count"]
+                                      .toString(),
+                                  style:
+                                      const TextStyle(
+                                    fontWeight:
+                                        FontWeight.bold,
+                                    color:
+                                        Colors.orange,
+                                  ),
+                                ),
+                              ),
+
+                              const SizedBox(
+                                  width:
+                                      14),
+
+                              /// INFO
+                              Expanded(
+                                child:
+                                    Column(
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      item["name"],
+                                      style:
+                                          const TextStyle(
+                                        fontSize:
+                                            18,
+                                        fontWeight:
+                                            FontWeight.bold,
+                                      ),
+                                    ),
+                                    const SizedBox(
+                                        height:
+                                            6),
+                                    Text(
+                                      rupiah(item[
+                                          "price"]),
+                                      style:
+                                          const TextStyle(
+                                        color:
+                                            Colors.grey,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+
+                              Text(
+                                rupiah(item[
+                                    "total_price"]),
+                                style:
+                                    const TextStyle(
+                                  color: Colors
+                                      .deepOrange,
+                                  fontWeight:
+                                      FontWeight.bold,
+                                ),
+                              )
+                            ],
+                          ),
+                        );
+                      },
+                    ),
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    description!,
-                    style: Theme.of(context).textTheme.bodyMedium,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
+
+                  /// SUMMARY
+                  Container(
+                    padding:
+                        const EdgeInsets.all(
+                            18),
+                    decoration:
+                        BoxDecoration(
+                      color: Colors
+                          .white,
+                      borderRadius:
+                          BorderRadius.circular(
+                              20),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors
+                              .black
+                              .withOpacity(
+                                  0.05),
+                          blurRadius:
+                              8,
+                        )
+                      ],
+                    ),
+                    child: Column(
+                      children: [
+
+                        rowPrice(
+                          "Subtotal",
+                          rupiah(
+                              subtotal),
+                        ),
+
+                        const SizedBox(
+                            height: 10),
+
+                        rowPrice(
+                          "Delivery",
+                          "Free",
+                        ),
+
+                        const Divider(
+                            height:
+                                25),
+
+                        rowPrice(
+                          "Total",
+                          rupiah(
+                              subtotal),
+                          bold: true,
+                        ),
+
+                        const SizedBox(
+                            height:
+                                18),
+
+                        SizedBox(
+                          width: double
+                              .infinity,
+                          child:
+                              ElevatedButton(
+                            onPressed:
+                                () {},
+                            style:
+                                ElevatedButton.styleFrom(
+                              backgroundColor:
+                                  Colors.black,
+                              padding:
+                                  const EdgeInsets.symmetric(
+                                vertical:
+                                    16,
+                              ),
+                              shape:
+                                  RoundedRectangleBorder(
+                                borderRadius:
+                                    BorderRadius.circular(
+                                        15),
+                              ),
+                            ),
+                            child:
+                                Text(
+                              "Checkout (${rupiah(subtotal)})",
+                            ),
+                          ),
+                        )
+                      ],
+                    ),
                   )
                 ],
               ),
             ),
-            const SizedBox(width: 8),
-            Text(
-              "USD$price",
-              style: Theme.of(context)
-                  .textTheme
-                  .labelSmall!
-                  .copyWith(color: const Color(0xFF22A45D)),
-            )
-          ],
+    );
+  }
+
+  Widget rowPrice(
+    String title,
+    String value, {
+    bool bold = false,
+  }) {
+    return Row(
+      mainAxisAlignment:
+          MainAxisAlignment
+              .spaceBetween,
+      children: [
+        Text(
+          title,
+          style: TextStyle(
+            fontWeight: bold
+                ? FontWeight.bold
+                : FontWeight.normal,
+          ),
         ),
-        const SizedBox(height: 8),
-        const Divider(),
+        Text(
+          value,
+          style: TextStyle(
+            fontWeight: bold
+                ? FontWeight.bold
+                : FontWeight.normal,
+            color: bold
+                ? Colors.deepOrange
+                : const Color.fromARGB(255, 255, 255, 255),
+          ),
+        ),
       ],
     );
   }
 }
-
-class NumOfItems extends StatelessWidget {
-  const NumOfItems({
-    super.key,
-    required this.numOfItem,
-  });
-
-  final int numOfItem;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 24,
-      width: 24,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        borderRadius: const BorderRadius.all(Radius.circular(4)),
-        border: Border.all(
-            width: 0.5, color: const Color(0xFF868686).withOpacity(0.3)),
-      ),
-      child: Text(
-        numOfItem.toString(),
-        style: Theme.of(context)
-            .textTheme
-            .labelLarge!
-            .copyWith(color: const Color(0xFF22A45D)),
-      ),
-    );
-  }
-}
-
-const List<Map> demoItems = [
-  {
-    "title": "Cookie Sandwich",
-    "price": 7.4,
-    "numOfItem": 1,
-  },
-  {
-    "title": "Combo Burger",
-    "price": 12,
-    "numOfItem": 1,
-  },
-  {
-    "title": "Oyster Dish",
-    "price": 8.6,
-    "numOfItem": 2,
-  },
-];
