@@ -1,263 +1,301 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 
-class FilterScreen extends StatelessWidget {
+class FilterScreen extends StatefulWidget {
   const FilterScreen({super.key});
 
   @override
+  State<FilterScreen> createState() =>
+      _FilterScreenState();
+}
+
+class _FilterScreenState
+    extends State<FilterScreen> {
+  bool isLoading = true;
+
+  List menuData = [];
+  List filteredData = [];
+
+  final String menuUrl =
+      "https://api.ppb.widiarrohman.my.id/api/2026/uts/A/kelompok1/food-delivery/menu";
+
+  @override
+  void initState() {
+    super.initState();
+    getMenu();
+  }
+
+  // =====================================
+  // GET MENU API
+  // =====================================
+  Future<void> getMenu() async {
+    try {
+      final response =
+          await http.get(Uri.parse(menuUrl));
+
+      final data =
+          jsonDecode(response.body);
+
+      setState(() {
+        menuData = data["data"];
+        filteredData = menuData;
+        isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
+
+  // =====================================
+  // FILTER HARGA
+  // =====================================
+  void filterPrice(int level) {
+    setState(() {
+      if (level == 1) {
+        filteredData = menuData
+            .where((item) =>
+                item["price"] <= 15000)
+            .toList();
+      } else if (level == 2) {
+        filteredData = menuData
+            .where((item) =>
+                item["price"] > 15000 &&
+                item["price"] <= 20000)
+            .toList();
+      } else {
+        filteredData = menuData
+            .where((item) =>
+                item["price"] > 20000)
+            .toList();
+      }
+    });
+  }
+
+  // =====================================
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor:
+          const Color(0xFFF8F9FB),
+
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        title: const Text("Filters"),
-      ),
-      body: const SafeArea(
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              SizedBox(height: 16),
-              Categories(),
-              SizedBox(height: 16),
-              Dietaries(),
-              SizedBox(height: 16),
-              PriceRange(),
-              SizedBox(height: 16),
-            ],
-          ),
+        title: const Text(
+          "Filter Menu",
         ),
+        backgroundColor:
+            Colors.orange,
       ),
-    );
-  }
-}
 
-class Dietaries extends StatefulWidget {
-  const Dietaries({super.key});
+      body: isLoading
+          ? const Center(
+              child:
+                  CircularProgressIndicator(),
+            )
+          : Column(
+              children: [
+                const SizedBox(
+                    height: 16),
 
-  @override
-  State<Dietaries> createState() => _DietariesState();
-}
+                // =============================
+                // FILTER BUTTON
+                // =============================
+                SizedBox(
+                  height: 50,
+                  child: ListView(
+                    scrollDirection:
+                        Axis.horizontal,
+                    children: [
+                      const SizedBox(
+                          width: 16),
 
-class _DietariesState extends State<Dietaries> {
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        SectionTitle(
-          title: "Dietary",
-          // When press the clean all
-          press: () {},
-        ),
-        const SizedBox(height: 16),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: Wrap(
-            spacing: 10,
-            children: List.generate(
-              demoDietaries.length,
-              (index) => ElevatedButton(
-                onPressed: () {},
-                style: ElevatedButton.styleFrom(
-                  minimumSize: const Size(56, 40),
-                  backgroundColor: index == 1
-                      ? const Color(0xFF22A45D)
-                      : const Color(0xFF868686),
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
+                      buildButton(
+                        "\$",
+                        () =>
+                            filterPrice(
+                                1),
+                      ),
+
+                      buildButton(
+                        "\$\$",
+                        () =>
+                            filterPrice(
+                                2),
+                      ),
+
+                      buildButton(
+                        "\$\$\$",
+                        () =>
+                            filterPrice(
+                                3),
+                      ),
+
+                      buildButton(
+                        "All",
+                        () {
+                          setState(
+                              () {
+                            filteredData =
+                                menuData;
+                          });
+                        },
+                      ),
+                    ],
                   ),
                 ),
-                child: Text(demoDietaries[index]["title"]),
-              ),
-            ),
-          ),
-        )
-      ],
-    );
-  }
 
-  List<Map<String, dynamic>> demoDietaries = [
-    {"title": "Any", "isActive": false},
-    {"title": "Vegetarian", "isActive": false},
-    {"title": "Vegan", "isActive": false},
-    {"title": "Gluten-Free", "isActive": false},
-  ];
-}
+                const SizedBox(
+                    height: 16),
 
-class Categories extends StatefulWidget {
-  const Categories({super.key});
+                // =============================
+                // MENU LIST
+                // =============================
+                Expanded(
+                  child:
+                      ListView.builder(
+                    padding:
+                        const EdgeInsets
+                            .all(16),
+                    itemCount:
+                        filteredData
+                            .length,
+                    itemBuilder:
+                        (context,
+                            index) {
+                      return Card(
+                        margin:
+                            const EdgeInsets
+                                .only(
+                          bottom:
+                              16,
+                        ),
+                        shape:
+                            RoundedRectangleBorder(
+                          borderRadius:
+                              BorderRadius.circular(
+                                  16),
+                        ),
+                        child:
+                            Column(
+                          crossAxisAlignment:
+                              CrossAxisAlignment.start,
+                          children: [
+                            ClipRRect(
+                              borderRadius:
+                                  const BorderRadius.only(
+                                topLeft:
+                                    Radius.circular(
+                                        16),
+                                topRight:
+                                    Radius.circular(
+                                        16),
+                              ),
+                              child:
+                                  Image.network(
+                                filteredData[index]["image"],
+                                height:
+                                    180,
+                                width: double.infinity,
+                                fit: BoxFit.cover,
+                              ),
+                            ),
 
-  @override
-  State<Categories> createState() => _CategoriesState();
-}
+                            Padding(
+                              padding:
+                                  const EdgeInsets.all(
+                                14,
+                              ),
+                              child:
+                                  Column(
+                                crossAxisAlignment:
+                                    CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    filteredData[index]["name"],
+                                    style:
+                                        const TextStyle(
+                                      fontSize:
+                                          18,
+                                      fontWeight:
+                                          FontWeight.bold,
+                                    ),
+                                  ),
 
-class _CategoriesState extends State<Categories> {
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        SectionTitle(
-          title: "Categories",
-          press: () {},
-        ),
-        const SizedBox(height: 16),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Wrap(
-            spacing: 8,
-            children: List.generate(
-              demoCategories.length,
-              (index) => ElevatedButton(
-                onPressed: () {},
-                style: ElevatedButton.styleFrom(
-                  minimumSize: const Size(56, 40),
-                  backgroundColor: index == 2
-                      ? const Color(0xFF22A45D)
-                      : const Color(0xFF868686),
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
+                                  const SizedBox(
+                                      height:
+                                          8),
+
+                                  Text(
+                                    "Rp ${filteredData[index]["price"]}",
+                                    style:
+                                        const TextStyle(
+                                      color:
+                                          Colors.orange,
+                                      fontWeight:
+                                          FontWeight.bold,
+                                    ),
+                                  ),
+
+                                  const SizedBox(
+                                      height:
+                                          6),
+
+                                  Row(
+                                    children: [
+                                      const Icon(
+                                        Icons.star,
+                                        color: Colors.orange,
+                                        size: 18,
+                                      ),
+                                      const SizedBox(
+                                          width:
+                                              4),
+                                      Text(
+                                        filteredData[index]["star"]
+                                            .toString(),
+                                      )
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            )
+                          ],
+                        ),
+                      );
+                    },
                   ),
-                ),
-                child: Text(demoCategories[index]["title"]),
-              ),
+                )
+              ],
             ),
-          ),
-        ),
-      ],
     );
   }
-}
 
-class SectionTitle extends StatelessWidget {
-  const SectionTitle({
-    super.key,
-    required this.title,
-    required this.press,
-  });
-
-  final String title;
-  final VoidCallback press;
-
-  @override
-  Widget build(BuildContext context) {
+  // =====================================
+  Widget buildButton(
+      String title,
+      VoidCallback press) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            title.toUpperCase(),
-            style: Theme.of(context).textTheme.titleMedium,
-          ),
-          GestureDetector(
-            onTap: press,
-            child: Text(
-              "Clear all".toUpperCase(),
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-                color: const Color(0xFF010F07).withOpacity(0.64),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// Demo data categories
-List<Map<String, dynamic>> demoCategories = [
-  {"title": "All", "isActive": false},
-  {"title": "Brunch", "isActive": false},
-  {"title": "Dinner", "isActive": false},
-  {"title": "Burgers", "isActive": true},
-  {"title": "Chinese", "isActive": false},
-  {"title": "Pizza", "isActive": false},
-  {"title": "Salads", "isActive": false},
-  {"title": "Soups", "isActive": false},
-  {"title": "Breakfast", "isActive": false},
-];
-
-class PriceRange extends StatelessWidget {
-  const PriceRange({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        SectionTitle(
-          title: "Price Range",
-          press: () {},
-        ),
-        const SizedBox(height: 16),
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            children: [
-              const SizedBox(width: 16),
-              ...List.generate(
-                // For demo i'm using length 5
-                5, // Price limit
-                (index) => Padding(
-                  padding: const EdgeInsets.only(right: 16),
-                  child: RoundedButton(
-                    index: index,
-                    isActive: index == 2, // for demo just select 3rd item
-                    press: () {},
-                  ),
-                ),
-              ),
-            ],
-          ),
-        )
-      ],
-    );
-  }
-}
-
-class RoundedButton extends StatelessWidget {
-  const RoundedButton({
-    super.key,
-    this.isActive = false,
-    required this.index,
-    required this.press,
-  });
-
-  final bool isActive;
-  final int index;
-  final VoidCallback press;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: 56,
-      width: 56,
+      padding:
+          const EdgeInsets.only(
+              right: 12),
       child: ElevatedButton(
-        style: ElevatedButton.styleFrom(
-          padding: EdgeInsets.zero,
-          backgroundColor: isActive ? const Color(0xFF22A45D) : Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(100),
-            side: BorderSide(
-                color: isActive
-                    ? const Color(0xFF22A45D)
-                    : const Color(0xFF868686).withOpacity(0.1)),
-          ),
-        ),
         onPressed: press,
-        child: Text(
-          "\$" * (index + 1),
-          style: TextStyle(
-            fontWeight: FontWeight.normal,
-            color: isActive ? Colors.white : const Color(0xFF010F07),
-            fontSize: 14,
+        style:
+            ElevatedButton.styleFrom(
+          backgroundColor:
+              Colors.white,
+          foregroundColor:
+              Colors.orange,
+          shape:
+              RoundedRectangleBorder(
+            borderRadius:
+                BorderRadius.circular(
+                    30),
           ),
         ),
+        child: Text(title),
       ),
     );
   }
