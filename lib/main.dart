@@ -1,19 +1,19 @@
 import 'package:flutter/material.dart';
 
 // ================= IMPORT SCREENS =================
-import 'screens/onboarding_screen.dart';
-import 'screens/home_page.dart';
-import 'screens/profile_detail_page.dart';
-import 'screens/add_to_order_page.dart';
-import 'screens/order_details_page.dart';
-import 'screens/filters_page.dart';
-import 'screens/search_details_page.dart';
-import 'screens/forgot_password_page.dart';
-import 'screens/reset_email_page.dart';
-import 'screens/sign_in_page.dart';
-import 'screens/sign_up_page.dart';
-import 'screens/restaurant_details_page.dart';
-import 'screens/restaurant_featured_partners_page.dart';
+import 'screens/other_page/onboarding_screen.dart';
+import 'screens/main_menu/home_page.dart';
+import 'screens/main_menu/profile_detail_page.dart';
+import 'screens/main_menu/add_to_order_page.dart';
+import 'screens/other_page/order_details_page.dart';
+import 'screens/other_page/filters_page.dart';
+import 'screens/other_page/search_details_page.dart';
+import 'screens/other_page/forgot_password_page.dart';
+import 'screens/other_page/reset_email_page.dart';
+import 'screens/other_page/sign_in_page.dart';
+import 'screens/other_page/sign_up_page.dart';
+import 'screens/other_page/restaurant_details_page.dart';
+import 'screens/other_page/restaurant_featured_partners_page.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
