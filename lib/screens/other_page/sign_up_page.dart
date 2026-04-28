@@ -1,6 +1,7 @@
+import 'dart:convert';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
+import 'package:http/http.dart' as http;
 
 class SignUpScreen extends StatelessWidget {
   const SignUpScreen({super.key});
@@ -10,86 +11,17 @@ class SignUpScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: Colors.white,
         title: const Text("Sign Up"),
+        backgroundColor: Colors.white,
       ),
-      body: SingleChildScrollView(
+      body: const SingleChildScrollView(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
+          padding: EdgeInsets.all(16),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const WelcomeText(
-                title: "Create Account",
-                text: "Enter your Name, Email and Password \nfor sign up.",
-              ),
-
-              // Sign Up Form
-              const SignUpForm(),
-              const SizedBox(height: 16),
-
-              // Already have account
-              Center(
-                child: Text.rich(
-                  TextSpan(
-                    style: Theme.of(context)
-                        .textTheme
-                        .bodySmall!
-                        .copyWith(fontWeight: FontWeight.w500),
-                    text: "Already have account? ",
-                    children: <TextSpan>[
-                      TextSpan(
-                        text: "Sign In",
-                        style: const TextStyle(color: Color(0xFF22A45D)),
-                        recognizer: TapGestureRecognizer()
-                          ..onTap = () {
-                            // Navigate to Sign In Screen
-                          },
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              Center(
-                child: Text(
-                  "By Signing up you agree to our Terms \nConditions & Privacy Policy.",
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.bodyMedium,
-                ),
-              ),
-              const SizedBox(height: 16),
-              Center(
-                  child: Text("Or",
-                      style: TextStyle(
-                          color: Color(0xFF010F07).withOpacity(0.7)))),
-              const SizedBox(height: 16),
-
-              // Facebook
-              SocalButton(
-                press: () {},
-                text: "Connect with Facebook",
-                color: const Color(0xFF395998),
-                icon: SvgPicture.asset(
-                  'assets/icons/facebook.svg',
-                  colorFilter: const ColorFilter.mode(
-                    Color(0xFF395998),
-                    BlendMode.srcIn,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              // Google
-              SocalButton(
-                press: () {},
-                text: "Connect with Google",
-                color: const Color(0xFF4285F4),
-                icon: SvgPicture.asset(
-                  'assets/icons/google.svg',
-                ),
-              ),
-              const SizedBox(height: 16),
+              WelcomeText(),
+              SizedBox(height: 20),
+              SignUpForm(),
             ],
           ),
         ),
@@ -98,201 +30,253 @@ class SignUpScreen extends StatelessWidget {
   }
 }
 
+// =====================================
+// WELCOME TEXT
+// =====================================
 class WelcomeText extends StatelessWidget {
-  final String title, text;
+  const WelcomeText({super.key});
 
-  const WelcomeText({super.key, required this.title, required this.text});
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    return const Column(
+      crossAxisAlignment:
+          CrossAxisAlignment.start,
       children: [
-        const SizedBox(height: 16),
+        SizedBox(height: 10),
         Text(
-          title,
-          style: Theme.of(context)
-              .textTheme
-              .titleLarge!
-              .copyWith(fontWeight: FontWeight.w600),
+          "Create Account",
+          style: TextStyle(
+            fontSize: 24,
+            fontWeight:
+                FontWeight.bold,
+          ),
         ),
-        const SizedBox(height: 16 / 2),
-        Text(text, style: TextStyle(color: Color(0xFF868686))),
-        const SizedBox(height: 24),
+        SizedBox(height: 8),
+        Text(
+          "Enter username and password for sign up",
+        ),
       ],
     );
   }
 }
 
-class SocalButton extends StatelessWidget {
-  final Color color;
-  final String text;
-  final Widget icon;
-  final GestureTapCallback press;
-
-  const SocalButton({
-    super.key,
-    required this.color,
-    required this.icon,
-    required this.press,
-    required this.text,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    const padding = EdgeInsets.symmetric(horizontal: 16, vertical: 8);
-    return SizedBox(
-      width: double.infinity,
-      child: ElevatedButton(
-        style: ElevatedButton.styleFrom(
-          padding: padding,
-          backgroundColor: color,
-          shape: const RoundedRectangleBorder(
-              borderRadius: BorderRadius.all(Radius.circular(8))),
-        ),
-        onPressed: press,
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              height: 28,
-              width: 28,
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.all(Radius.circular(4)),
-              ),
-              child: icon,
-            ),
-            const Spacer(flex: 2),
-            Text(
-              text.toUpperCase(),
-              style: Theme.of(context)
-                  .textTheme
-                  .bodySmall!
-                  .copyWith(color: Colors.white, fontWeight: FontWeight.w600),
-            ),
-            const Spacer(flex: 3),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
+// =====================================
+// SIGN UP FORM
+// =====================================
 class SignUpForm extends StatefulWidget {
   const SignUpForm({super.key});
 
   @override
-  State<SignUpForm> createState() => _SignUpFormState();
+  State<SignUpForm> createState() =>
+      _SignUpFormState();
 }
 
-class _SignUpFormState extends State<SignUpForm> {
-  final _formKey = GlobalKey<FormState>();
+class _SignUpFormState
+    extends State<SignUpForm> {
+  final _formKey =
+      GlobalKey<FormState>();
 
-  bool _obscureText = true;
+  final usernameController =
+      TextEditingController();
+
+  final passwordController =
+      TextEditingController();
+
+  final confirmController =
+      TextEditingController();
+
+  bool obscure = true;
+  bool isLoading = false;
+
+  // =====================================
+  // SIGN UP (PAKAI ENDPOINT LOGIN)
+  // =====================================
+  Future<void> signUp() async {
+    if (passwordController.text !=
+        confirmController.text) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(
+        const SnackBar(
+          content: Text(
+            "Password tidak sama",
+          ),
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      isLoading = true;
+    });
+
+    final url =
+        "https://api.ppb.widiarrohman.my.id/api/2026/uts/A/kelompok1/food-delivery/login";
+
+    try {
+      final response =
+          await http.post(
+        Uri.parse(url),
+        headers: {
+          "Content-Type":
+              "application/json",
+        },
+        body: jsonEncode({
+          "username":
+              usernameController.text,
+          "password":
+              passwordController.text,
+        }),
+      );
+
+      final data =
+          jsonDecode(response.body);
+
+      setState(() {
+        isLoading = false;
+      });
+
+      ScaffoldMessenger.of(context)
+          .showSnackBar(
+        SnackBar(
+          content: Text(
+            data["message"],
+          ),
+        ),
+      );
+
+      print(data["token"]);
+    } catch (e) {
+      setState(() {
+        isLoading = false;
+      });
+
+      ScaffoldMessenger.of(context)
+          .showSnackBar(
+        SnackBar(
+          content:
+              Text(e.toString()),
+        ),
+      );
+    }
+  }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(
+      BuildContext context) {
     return Form(
       key: _formKey,
       child: Column(
         children: [
-          // Full Name Field
           TextFormField(
-            onSaved: (value) {},
-            textInputAction: TextInputAction.next,
-            decoration: const InputDecoration(
-              hintText: "Full Name",
-              border: UnderlineInputBorder(
-                borderSide: BorderSide(color: Color(0xFFF3F2F2)),
-              ),
-              enabledBorder: UnderlineInputBorder(
-                borderSide: BorderSide(color: Color(0xFFF3F2F2)),
-              ),
+            controller:
+                usernameController,
+            decoration:
+                const InputDecoration(
+              hintText:
+                  "Username",
             ),
           ),
-          const SizedBox(height: 16),
 
-          // Email Field
-          TextFormField(
-            onSaved: (value) {},
-            textInputAction: TextInputAction.next,
-            keyboardType: TextInputType.emailAddress,
-            decoration: const InputDecoration(
-              hintText: "Email Address",
-              border: UnderlineInputBorder(
-                borderSide: BorderSide(color: Color(0xFFF3F2F2)),
-              ),
-              enabledBorder: UnderlineInputBorder(
-                borderSide: BorderSide(color: Color(0xFFF3F2F2)),
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
+          const SizedBox(
+              height: 16),
 
-          // Password Field
           TextFormField(
-            obscureText: _obscureText,
-            textInputAction: TextInputAction.next,
-            onChanged: (value) {},
-            onSaved: (value) {},
-            decoration: InputDecoration(
-              hintText: "Password",
-              border: UnderlineInputBorder(
-                borderSide: BorderSide(color: Color(0xFFF3F2F2)),
-              ),
-              enabledBorder: UnderlineInputBorder(
-                borderSide: BorderSide(color: Color(0xFFF3F2F2)),
-              ),
-              suffixIcon: GestureDetector(
-                onTap: () {
+            controller:
+                passwordController,
+            obscureText:
+                obscure,
+            decoration:
+                InputDecoration(
+              hintText:
+                  "Password",
+              suffixIcon:
+                  IconButton(
+                onPressed: () {
                   setState(() {
-                    _obscureText = !_obscureText;
+                    obscure =
+                        !obscure;
                   });
                 },
-                child: _obscureText
-                    ? const Icon(Icons.visibility_off, color: Color(0xFF868686))
-                    : const Icon(Icons.visibility, color: Color(0xFF868686)),
+                icon: Icon(
+                  obscure
+                      ? Icons
+                          .visibility_off
+                      : Icons
+                          .visibility,
+                ),
               ),
             ),
           ),
-          const SizedBox(height: 16),
 
-          // Confirm Password Field
+          const SizedBox(
+              height: 16),
+
           TextFormField(
-            obscureText: _obscureText,
-            decoration: InputDecoration(
-              hintText: "Confirm Password",
-              border: UnderlineInputBorder(
-                borderSide: BorderSide(color: Color(0xFFF3F2F2)),
-              ),
-              enabledBorder: UnderlineInputBorder(
-                borderSide: BorderSide(color: Color(0xFFF3F2F2)),
-              ),
-              suffixIcon: GestureDetector(
-                onTap: () {
-                  setState(() {
-                    _obscureText = !_obscureText;
-                  });
-                },
-                child: _obscureText
-                    ? const Icon(Icons.visibility_off, color: Color(0xFF868686))
-                    : const Icon(Icons.visibility, color: Color(0xFF868686)),
-              ),
+            controller:
+                confirmController,
+            obscureText:
+                obscure,
+            decoration:
+                const InputDecoration(
+              hintText:
+                  "Confirm Password",
             ),
           ),
-          const SizedBox(height: 16),
-          // Sign Up Button
-          ElevatedButton(
-            onPressed: () {},
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF22A45D),
-              foregroundColor: Colors.white,
-              minimumSize: const Size(double.infinity, 40),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
+
+          const SizedBox(
+              height: 20),
+
+          SizedBox(
+            width:
+                double.infinity,
+            child:
+                ElevatedButton(
+              onPressed:
+                  isLoading
+                      ? null
+                      : signUp,
+              style:
+                  ElevatedButton
+                      .styleFrom(
+                backgroundColor:
+                    const Color(
+                        0xFF22A45D),
               ),
+              child:
+                  isLoading
+                      ? const CircularProgressIndicator(
+                          color: Colors
+                              .white,
+                        )
+                      : const Text(
+                          "Sign Up",
+                        ),
             ),
-            child: const Text("Sign Up"),
+          ),
+
+          const SizedBox(
+              height: 20),
+
+          Text.rich(
+            TextSpan(
+              text:
+                  "Already have account? ",
+              children: [
+                TextSpan(
+                  text:
+                      "Sign In",
+                  style:
+                      const TextStyle(
+                    color: Colors
+                        .green,
+                  ),
+                  recognizer:
+                      TapGestureRecognizer()
+                        ..onTap =
+                            () {},
+                ),
+              ],
+            ),
           ),
         ],
       ),
