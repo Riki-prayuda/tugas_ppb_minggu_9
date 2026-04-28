@@ -1,13 +1,54 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:http/http.dart' as http;
 
-class FoodAppHomeScreen extends StatelessWidget {
+class FoodAppHomeScreen extends StatefulWidget {
   const FoodAppHomeScreen({super.key});
+
+  @override
+  State<FoodAppHomeScreen> createState() => _FoodAppHomeScreenState();
+}
+
+class _FoodAppHomeScreenState extends State<FoodAppHomeScreen> {
+
+  String apiStatus = "Checking API...";
+  Color statusColor = Colors.orange;
+
+  
+  final String checkUrl =
+      "https://api.ppb.widiarrohman.my.id/api/2026/uts/A/kelompok1/check";
+
+  @override
+  void initState() {
+    super.initState();
+    checkApi();
+  }
+
+  // =====================================
+  // FUNCTION CHECK API
+  // =====================================
+  Future<void> checkApi() async {
+    try {
+      final response = await http.get(Uri.parse(checkUrl));
+
+      setState(() {
+        apiStatus = "Status: ${response.statusCode}\n${response.body}";
+        statusColor = Colors.green;
+      });
+    } catch (e) {
+      setState(() {
+        apiStatus = e.toString();
+        statusColor = Colors.red;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
+
       appBar: AppBar(
         backgroundColor: Colors.white,
         leading: const SizedBox(),
@@ -15,76 +56,75 @@ class FoodAppHomeScreen extends StatelessWidget {
           children: [
             Text(
               "Delivery to".toUpperCase(),
-              style: Theme.of(context)
-                  .textTheme
-                  .bodySmall!
-                  .copyWith(color: const Color(0xFF22A45D)),
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall!.copyWith(color: const Color(0xFF22A45D)),
             ),
-            const Text(
-              "San Francisco",
-              style: TextStyle(color: Colors.black),
-            )
+            const Text("San Francisco", style: TextStyle(color: Colors.black)),
           ],
         ),
         actions: [
           TextButton(
             onPressed: () {},
-            child: Text(
-              "Filter",
-              style: Theme.of(context).textTheme.bodyLarge,
-            ),
+            child: Text("Filter", style: Theme.of(context).textTheme.bodyLarge),
           ),
         ],
       ),
+
       body: SafeArea(
         child: SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 16),
+
+        
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: BigCardImageSlide(images: demoBigImages),
-              ),
-              const SizedBox(height: 32),
-              SectionTitle(
-                title: "Featured Partners",
-                press: () {},
-              ),
-              const SizedBox(height: 16),
-              const MediumCardList(),
-              const SizedBox(height: 20),
-              // Banner
-              const PromotionBanner(),
-              const SizedBox(height: 20),
-              SectionTitle(
-                title: "Best Pick",
-                press: () {},
-              ),
-              const SizedBox(height: 16),
-              const MediumCardList(),
-              const SizedBox(height: 20),
-              SectionTitle(title: "All Restaurants", press: () {}),
-              const SizedBox(height: 16),
-
-              // Demo list of Big Cards
-              ...List.generate(
-                // For demo we use 4 items
-                3,
-                (index) => Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                  child: RestaurantInfoBigCard(
-                    // Images are List<String>
-                    images: demoBigImages..shuffle(),
-                    name: "McDonald's",
-                    rating: 4.3,
-                    numOfRating: 200,
-                    deliveryTime: 25,
-                    foodType: const ["Chinese", "American", "Deshi food"],
-                    press: () {},
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: statusColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Text(
+                    apiStatus,
+                    style: TextStyle(
+                      color: statusColor,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
-              )
+              ),
+
+              const SizedBox(height: 10),
+
+              // =====================================
+              // BUTTON CHECK ULANG
+              // =====================================
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: checkApi,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.orange,
+                    ),
+                    child: const Text("Check API Again"),
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 20),
+
+              const Center(
+                child: Text(
+                  "Home Page Content",
+                  style: TextStyle(fontSize: 18),
+                ),
+              ),
             ],
           ),
         ),
@@ -219,9 +259,7 @@ class ScaltonLine extends StatelessWidget {
 }
 
 class MediumCardScalton extends StatelessWidget {
-  const MediumCardScalton({
-    super.key,
-  });
+  const MediumCardScalton({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -230,10 +268,7 @@ class MediumCardScalton extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          AspectRatio(
-            aspectRatio: 1.25,
-            child: ScaltonRoundedContainer(),
-          ),
+          AspectRatio(aspectRatio: 1.25, child: ScaltonRoundedContainer()),
           SizedBox(height: 16),
           ScaltonLine(width: 150),
           SizedBox(height: 16),
@@ -311,11 +346,9 @@ class RestaurantInfoBigCard extends StatelessWidget {
                 height: 20,
                 width: 20,
                 colorFilter: ColorFilter.mode(
-                  Theme.of(context)
-                      .textTheme
-                      .bodyLarge!
-                      .color!
-                      .withOpacity(0.5),
+                  Theme.of(
+                    context,
+                  ).textTheme.bodyLarge!.color!.withOpacity(0.5),
                   BlendMode.srcIn,
                 ),
               ),
@@ -333,17 +366,17 @@ class RestaurantInfoBigCard extends StatelessWidget {
                 height: 20,
                 width: 20,
                 colorFilter: ColorFilter.mode(
-                  Theme.of(context)
-                      .textTheme
-                      .bodyLarge!
-                      .color!
-                      .withOpacity(0.5),
+                  Theme.of(
+                    context,
+                  ).textTheme.bodyLarge!.color!.withOpacity(0.5),
                   BlendMode.srcIn,
                 ),
               ),
               const SizedBox(width: 8),
-              Text(isFreeDelivery ? "Free" : "Paid",
-                  style: Theme.of(context).textTheme.labelSmall),
+              Text(
+                isFreeDelivery ? "Free" : "Paid",
+                style: Theme.of(context).textTheme.labelSmall,
+              ),
             ],
           ),
         ],
@@ -372,8 +405,10 @@ class PriceRangeAndFoodtype extends StatelessWidget {
           (index) => Row(
             children: [
               buildSmallDot(),
-              Text(foodType[index],
-                  style: Theme.of(context).textTheme.bodyMedium),
+              Text(
+                foodType[index],
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
             ],
           ),
         ),
@@ -443,16 +478,18 @@ class RestaurantInfoMediumCard extends StatelessWidget {
                 Text(
                   "$delivertTime min",
                   style: Theme.of(context).textTheme.labelLarge!.copyWith(
-                      color: const Color(0xFF010F07).withOpacity(0.74)),
+                    color: const Color(0xFF010F07).withOpacity(0.74),
+                  ),
                 ),
                 const SmallDot(),
                 Text(
                   "Free delivery",
                   style: Theme.of(context).textTheme.labelMedium!.copyWith(
-                      color: const Color(0xFF010F07).withOpacity(0.74)),
-                )
+                    color: const Color(0xFF010F07).withOpacity(0.74),
+                  ),
+                ),
               ],
-            )
+            ),
           ],
         ),
       ),
@@ -461,10 +498,7 @@ class RestaurantInfoMediumCard extends StatelessWidget {
 }
 
 class Rating extends StatelessWidget {
-  const Rating({
-    super.key,
-    required this.rating,
-  });
+  const Rating({super.key, required this.rating});
 
   final double rating;
 
@@ -478,21 +512,16 @@ class Rating extends StatelessWidget {
       ),
       child: Text(
         rating.toString(),
-        style: Theme.of(context)
-            .textTheme
-            .labelSmall!
-            .copyWith(color: Colors.white),
+        style: Theme.of(
+          context,
+        ).textTheme.labelSmall!.copyWith(color: Colors.white),
       ),
     );
   }
 }
 
 class SectionTitle extends StatelessWidget {
-  const SectionTitle({
-    super.key,
-    required this.title,
-    required this.press,
-  });
+  const SectionTitle({super.key, required this.title, required this.press});
 
   final String title;
   final VoidCallback press;
@@ -526,10 +555,7 @@ class SectionTitle extends StatelessWidget {
 }
 
 class BigCardImageSlide extends StatefulWidget {
-  const BigCardImageSlide({
-    super.key,
-    required this.images,
-  });
+  const BigCardImageSlide({super.key, required this.images});
 
   final List images;
 
@@ -569,7 +595,7 @@ class _BigCardImageSlideState extends State<BigCardImageSlide> {
                 ),
               ),
             ),
-          )
+          ),
         ],
       ),
     );
@@ -603,9 +629,7 @@ class DotIndicator extends StatelessWidget {
 }
 
 class SmallDot extends StatelessWidget {
-  const SmallDot({
-    super.key,
-  });
+  const SmallDot({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -621,10 +645,7 @@ class SmallDot extends StatelessWidget {
 }
 
 class BigCardImage extends StatelessWidget {
-  const BigCardImage({
-    super.key,
-    required this.image,
-  });
+  const BigCardImage({super.key, required this.image});
 
   final String image;
 
@@ -633,10 +654,7 @@ class BigCardImage extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         borderRadius: const BorderRadius.all(Radius.circular(12)),
-        image: DecorationImage(
-          image: NetworkImage(image),
-          fit: BoxFit.cover,
-        ),
+        image: DecorationImage(image: NetworkImage(image), fit: BoxFit.cover),
       ),
     );
   }
@@ -658,10 +676,9 @@ class RatingWithCounter extends StatelessWidget {
       children: [
         Text(
           rating.toString(),
-          style: Theme.of(context)
-              .textTheme
-              .labelSmall!
-              .copyWith(color: const Color(0xFF010F07).withOpacity(0.74)),
+          style: Theme.of(context).textTheme.labelSmall!.copyWith(
+            color: const Color(0xFF010F07).withOpacity(0.74),
+          ),
         ),
         const SizedBox(width: 8),
         SvgPicture.string(
@@ -674,11 +691,12 @@ class RatingWithCounter extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 8),
-        Text("$numOfRating+ Ratings",
-            style: Theme.of(context)
-                .textTheme
-                .labelSmall!
-                .copyWith(color: const Color(0xFF010F07).withOpacity(0.74))),
+        Text(
+          "$numOfRating+ Ratings",
+          style: Theme.of(context).textTheme.labelSmall!.copyWith(
+            color: const Color(0xFF010F07).withOpacity(0.74),
+          ),
+        ),
       ],
     );
   }
