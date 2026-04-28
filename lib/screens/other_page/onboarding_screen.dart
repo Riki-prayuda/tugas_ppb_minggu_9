@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -12,6 +14,38 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   final PageController pageController = PageController();
 
+  bool isLoading = true;
+  List menuData = [];
+
+  final String menuUrl =
+      "https://api.ppb.widiarrohman.my.id/api/2026/uts/A/kelompok1/food-delivery/menu";
+
+  @override
+  void initState() {
+    super.initState();
+    getMenu();
+  }
+
+  // =====================================
+  // GET MENU API
+  // =====================================
+  Future<void> getMenu() async {
+    try {
+      final response = await http.get(Uri.parse(menuUrl));
+
+      final data = jsonDecode(response.body);
+
+      setState(() {
+        menuData = data["data"];
+        isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
+
   @override
   void dispose() {
     pageController.dispose();
@@ -19,18 +53,17 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 
   void nextPageOrStart() {
-    if (currentPage < demoData.length - 1) {
+    if (currentPage < menuData.length - 1) {
       pageController.nextPage(
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeInOut,
       );
     } else {
-      Navigator.pop(context); // kembali ke halaman sebelumnya
-      // kalau mau ke home:
-      // Navigator.pushReplacementNamed(context, '/home');
+      Navigator.pop(context);
     }
   }
 
+  // =====================================
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -45,154 +78,129 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         ),
       ),
 
-      body: SafeArea(
-        child: Column(
-          children: [
-            const Spacer(flex: 1),
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : SafeArea(
+              child: Column(
+                children: [
+                  const Spacer(),
 
-            Expanded(
-              flex: 14,
-              child: PageView.builder(
-                controller: pageController,
-                itemCount: demoData.length,
-                onPageChanged: (value) {
-                  setState(() {
-                    currentPage = value;
-                  });
-                },
-                itemBuilder: (context, index) => OnboardContent(
-                  illustration: demoData[index]["illustration"],
-                  title: demoData[index]["title"],
-                  text: demoData[index]["text"],
-                ),
-              ),
-            ),
-
-            const Spacer(),
-
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: List.generate(
-                demoData.length,
-                (index) => DotIndicator(isActive: index == currentPage),
-              ),
-            ),
-
-            const Spacer(flex: 2),
-
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: ElevatedButton(
-                onPressed: nextPageOrStart,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF22A45D),
-                  foregroundColor: Colors.white,
-                  minimumSize: const Size(double.infinity, 45),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
+                  Expanded(
+                    flex: 14,
+                    child: PageView.builder(
+                      controller: pageController,
+                      itemCount: menuData.length,
+                      onPageChanged: (value) {
+                        setState(() {
+                          currentPage = value;
+                        });
+                      },
+                      itemBuilder: (context, index) {
+                        return OnboardContent(
+                          image: menuData[index]["image"],
+                          title: menuData[index]["name"],
+                          text:
+                              "Harga Rp ${menuData[index]["price"]}\nRating ${menuData[index]["star"]}",
+                        );
+                      },
+                    ),
                   ),
-                ),
-                child: Text(
-                  currentPage == demoData.length - 1 ? "GET STARTED" : "NEXT",
-                ),
+
+                  const Spacer(),
+
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: List.generate(
+                      menuData.length,
+                      (index) => DotIndicator(isActive: index == currentPage),
+                    ),
+                  ),
+
+                  const Spacer(),
+
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: ElevatedButton(
+                      onPressed: nextPageOrStart,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF22A45D),
+                        minimumSize: const Size(double.infinity, 50),
+                      ),
+                      child: Text(
+                        currentPage == menuData.length - 1
+                            ? "GET STARTED"
+                            : "NEXT",
+                      ),
+                    ),
+                  ),
+
+                  const Spacer(),
+                ],
               ),
             ),
+    );
+  }
+}
 
-            const Spacer(),
-          ],
-        ),
+// =====================================
+// CONTENT
+// =====================================
+class OnboardContent extends StatelessWidget {
+  final String image, title, text;
+
+  const OnboardContent({
+    super.key,
+    required this.image,
+    required this.title,
+    required this.text,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: Column(
+        children: [
+          Expanded(child: Image.network(image, fit: BoxFit.contain)),
+          const SizedBox(height: 20),
+          Text(
+            title,
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            text,
+            textAlign: TextAlign.center,
+            style: const TextStyle(color: Colors.grey),
+          ),
+        ],
       ),
     );
   }
 }
 
-class OnboardContent extends StatelessWidget {
-  const OnboardContent({
-    super.key,
-    required this.illustration,
-    required this.title,
-    required this.text,
-  });
-
-  final String? illustration, title, text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Expanded(
-          child: AspectRatio(
-            aspectRatio: 1,
-            child: Image.network(
-              illustration!,
-              fit: BoxFit.contain,
-              errorBuilder: (context, error, stackTrace) {
-                return const Icon(Icons.image_not_supported, size: 120);
-              },
-            ),
-          ),
-        ),
-        const SizedBox(height: 16),
-        Text(
-          title!,
-          style: Theme.of(
-            context,
-          ).textTheme.titleLarge!.copyWith(fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          text!,
-          style: Theme.of(context).textTheme.bodyMedium,
-          textAlign: TextAlign.center,
-        ),
-      ],
-    );
-  }
-}
-
+// =====================================
+// DOT
+// =====================================
 class DotIndicator extends StatelessWidget {
-  const DotIndicator({
-    super.key,
-    this.isActive = false,
-    this.activeColor = const Color(0xFF22A45D),
-    this.inActiveColor = const Color(0xFF868686),
-  });
-
   final bool isActive;
-  final Color activeColor, inActiveColor;
+
+  const DotIndicator({super.key, this.isActive = false});
 
   @override
   Widget build(BuildContext context) {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 250),
-      margin: const EdgeInsets.symmetric(horizontal: 8),
-      height: 5,
-      width: isActive ? 18 : 8,
+      margin: const EdgeInsets.symmetric(horizontal: 5),
+      height: 8,
+      width: isActive ? 22 : 8,
       decoration: BoxDecoration(
-        color: isActive ? activeColor : inActiveColor.withOpacity(0.25),
+        color: isActive
+            ? const Color(0xFF22A45D)
+            : Colors.grey.withOpacity(0.3),
         borderRadius: BorderRadius.circular(20),
       ),
     );
   }
 }
-
-List<Map<String, dynamic>> demoData = [
-  {
-    "illustration": "https://i.postimg.cc/L43CKddq/Illustrations.png",
-    "title": "All your favorites",
-    "text":
-        "Order from the best local restaurants \nwith easy, on-demand delivery.",
-  },
-  {
-    "illustration": "https://i.postimg.cc/xTjs9sY6/Illustrations-1.png",
-    "title": "Free delivery offers",
-    "text":
-        "Free delivery for new customers via Apple Pay\nand other payment methods.",
-  },
-  {
-    "illustration": "https://i.postimg.cc/6qcYdZVV/Illustrations-2.png",
-    "title": "Choose your food",
-    "text":
-        "Easily find your type of food craving and\nyou’ll get delivery in wide range.",
-  },
-];
