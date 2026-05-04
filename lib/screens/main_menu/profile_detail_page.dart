@@ -235,3 +235,100 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
     );
   }
+
+  // ==========================
+  // FUNCTIONS
+  // ==========================
+
+  void editProfile() {
+    TextEditingController name = TextEditingController(text: userName);
+
+    TextEditingController email = TextEditingController(text: userEmail);
+
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text("Edit Profile"),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: name,
+              decoration: const InputDecoration(labelText: "Name"),
+            ),
+            TextField(
+              controller: email,
+              decoration: const InputDecoration(labelText: "Email"),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              setState(() {
+                userName = name.text;
+                userEmail = email.text;
+              });
+
+              saveData();
+
+              Navigator.pop(context);
+            },
+            child: const Text("Save"),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> pickImage() async {
+    final picker = ImagePicker();
+
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+
+    if (pickedFile != null) {
+      setState(() {
+        profileImagePath = pickedFile.path;
+      });
+
+      saveData();
+    }
+  }
+
+  void changePassword() {
+    TextEditingController oldPass = TextEditingController();
+
+    TextEditingController newPass = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text("Change Password"),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: oldPass,
+              obscureText: true,
+              decoration: const InputDecoration(labelText: "Old Password"),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: newPass,
+              obscureText: true,
+              decoration: const InputDecoration(labelText: "New Password"),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              showSnack("Password updated successfully");
+            },
+            child: const Text("Save"),
+          ),
+        ],
+      ),
+    );
+  }
