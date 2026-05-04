@@ -730,3 +730,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
     );
   }
+
+    void showSnack(String message) {
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
+  }
+}
