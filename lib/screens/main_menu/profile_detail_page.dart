@@ -332,3 +332,375 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
     );
   }
+
+  void paymentMethodDialog() {
+    List<String> bankList = ["BCA", "BRI", "BNI", "Mandiri"];
+
+    List<String> walletList = ["Dana", "OVO", "GoPay", "ShopeePay"];
+
+    String selectedName = paymentMethod == "Not Set" ? "BCA" : paymentMethod;
+
+    String selectedType = walletList.contains(paymentMethod)
+        ? "E-Wallet"
+        : "Bank";
+
+    TextEditingController numberController = TextEditingController(
+      text: paymentNumber,
+    );
+
+    showDialog(
+      context: context,
+      builder: (_) => StatefulBuilder(
+        builder: (context, setStateDialog) {
+          IconData getIcon(String name) {
+            switch (name) {
+              case "BCA":
+              case "BRI":
+              case "BNI":
+              case "Mandiri":
+                return Icons.account_balance;
+
+              case "Dana":
+              case "OVO":
+              case "GoPay":
+              case "ShopeePay":
+                return Icons.account_balance_wallet;
+
+              default:
+                return Icons.credit_card;
+            }
+          }
+
+          Color getColor(String name) {
+            switch (name) {
+              case "BCA":
+                return Colors.blue;
+              case "BRI":
+                return Colors.indigo;
+              case "BNI":
+                return Colors.orange;
+              case "Mandiri":
+                return Colors.amber;
+              case "Dana":
+                return Colors.blue;
+              case "OVO":
+                return Colors.purple;
+              case "GoPay":
+                return Colors.cyan;
+              case "ShopeePay":
+                return Colors.deepOrange;
+              default:
+                return Colors.grey;
+            }
+          }
+
+          return AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(22),
+            ),
+            title: const Center(child: Text("Payment Methods")),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CircleAvatar(
+                    radius: 32,
+                    backgroundColor: getColor(selectedName).withOpacity(0.15),
+                    child: Icon(
+                      getIcon(selectedName),
+                      size: 32,
+                      color: getColor(selectedName),
+                    ),
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  DropdownButtonFormField(
+                    value: selectedType,
+                    items: const [
+                      DropdownMenuItem(value: "Bank", child: Text("Bank")),
+                      DropdownMenuItem(
+                        value: "E-Wallet",
+                        child: Text("E-Wallet"),
+                      ),
+                    ],
+                    onChanged: (value) {
+                      setStateDialog(() {
+                        selectedType = value!;
+
+                        selectedName = selectedType == "Bank" ? "BCA" : "Dana";
+
+                        numberController.clear();
+                      });
+                    },
+                  ),
+
+                  const SizedBox(height: 14),
+
+                  DropdownButtonFormField(
+                    value: selectedName,
+                    items: (selectedType == "Bank" ? bankList : walletList)
+                        .map(
+                          (item) =>
+                              DropdownMenuItem(value: item, child: Text(item)),
+                        )
+                        .toList(),
+                    onChanged: (value) {
+                      setStateDialog(() {
+                        selectedName = value!;
+                        numberController.clear();
+                      });
+                    },
+                  ),
+
+                  const SizedBox(height: 14),
+
+                  TextField(
+                    controller: numberController,
+                    decoration: InputDecoration(
+                      labelText: selectedType == "Bank"
+                          ? "Account Number"
+                          : "Phone Number",
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+                child: const Text("Cancel"),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: getColor(selectedName),
+                ),
+                onPressed: () {
+                  setState(() {
+                    paymentMethod = selectedName;
+                    paymentNumber = numberController.text;
+                  });
+
+                  saveData();
+
+                  Navigator.pop(context);
+
+                  showSnack("Payment Saved");
+                },
+                child: const Text("Save"),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  void editLocation() {
+    TextEditingController loc = TextEditingController(text: userAddress);
+
+    bool isLoading = false;
+
+    showDialog(
+      context: context,
+      builder: (_) => StatefulBuilder(
+        builder: (context, setStateDialog) {
+          Future<void> detectLocation() async {
+            setStateDialog(() {
+              isLoading = true;
+            });
+
+            try {
+              Position position = await Geolocator.getCurrentPosition(
+                desiredAccuracy: LocationAccuracy.high,
+              );
+
+              List<Placemark> placemarks = await placemarkFromCoordinates(
+                position.latitude,
+                position.longitude,
+              );
+
+              Placemark place = placemarks.first;
+
+              // 🔥 FULL ADDRESS + REGION
+              String fullAddress = [
+                place.street,
+                place.subLocality,
+                place.locality,
+                place.administrativeArea,
+                place.country,
+              ].where((e) => e != null && e.isNotEmpty).join(", ");
+
+              loc.text = fullAddress;
+            } catch (e) {
+              showSnack("Failed detect location");
+            }
+
+            setStateDialog(() {
+              isLoading = false;
+            });
+          }
+
+          return AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+
+            title: const Text("Location Settings"),
+
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: loc,
+                  minLines: 1,
+                  maxLines: 4,
+                  decoration: InputDecoration(
+                    prefixIcon: const Icon(
+                      Icons.location_on,
+                      color: Colors.orange,
+                    ),
+                    labelText: "Your Address",
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 16),
+
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: isLoading ? null : detectLocation,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.orange,
+                    ),
+                    icon: isLoading
+                        ? const SizedBox(
+                            height: 18,
+                            width: 18,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
+                          )
+                        : const Icon(Icons.my_location),
+                    label: Text(
+                      isLoading ? "Detecting..." : "Use Current Location",
+                    ),
+                  ),
+                ),
+              ],
+            ),
+
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+                child: const Text("Cancel"),
+              ),
+
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
+                onPressed: () {
+                  setState(() {
+                    userAddress = loc.text;
+                  });
+
+                  saveData(); // 🔥 SIMPAN
+
+                  Navigator.pop(context);
+
+                  showSnack("Location Saved");
+                },
+                child: const Text("Save"),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  void notificationSetting() {
+    bool tempValue = notificationEnabled;
+
+    showDialog(
+      context: context,
+      builder: (_) => StatefulBuilder(
+        builder: (context, setStateDialog) {
+          return AlertDialog(
+            title: const Text("Notifications"),
+            content: SwitchListTile(
+              value: tempValue,
+              onChanged: (value) {
+                setStateDialog(() {
+                  tempValue = value;
+                });
+              },
+              title: Text(tempValue ? "Notification ON" : "Notification OFF"),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+                child: const Text("Cancel"),
+              ),
+              TextButton(
+                onPressed: () {
+                  setState(() {
+                    notificationEnabled = tempValue;
+                  });
+
+                  saveData();
+
+                  Navigator.pop(context);
+
+                  showSnack(
+                    notificationEnabled
+                        ? "Notifications Enabled"
+                        : "Notifications Disabled",
+                  );
+                },
+                child: const Text("Save"),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  void referFriend() {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text("Refer Friends"),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: const [
+            Icon(Icons.card_giftcard, size: 60, color: Colors.orange),
+            SizedBox(height: 12),
+            Text(
+              "Invite your friends and get Rp 20.000 voucher!",
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              showSnack("Referral link copied");
+            },
+            child: const Text("Share"),
+          ),
+        ],
+      ),
+    );
+  }
