@@ -704,3 +704,29 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
     );
   }
+
+  void logout() {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text("Logout"),
+        content: const Text("Are you sure want logout?"),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+            },
+            child: const Text("No"),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+
+              Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
+            },
+            child: const Text("Yes"),
+          ),
+        ],
+      ),
+    );
+  }
