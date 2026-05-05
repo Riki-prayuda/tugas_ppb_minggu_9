@@ -27,19 +27,20 @@ class _CheckoutPageState extends State<CheckoutPage> {
   Future<void> loadAllData() async {
     final prefs = await SharedPreferences.getInstance();
 
-    // ambil order lama
-    List<String> oldOrder = prefs.getStringList("order") ?? [];
+    List<String> oldOrders = prefs.getStringList("orders") ?? [];
 
-    // ambil cart/pesanan baru
     List<String> cart = prefs.getStringList("cart") ?? [];
 
-    // gabungkan pesanan lama dan baru
-    oldOrder.addAll(cart);
+    Map<String, dynamic> newOrder = {
+      "time": DateTime.now().toString(),
+      "status": "Processing",
+      "items": cart,
+    };
 
-    // simpan kembali
-    await prefs.setStringList("order", oldOrder);
+    oldOrders.add(jsonEncode(newOrder));
 
-    // hapus cart
+    await prefs.setStringList("orders", oldOrders);
+
     await prefs.remove("cart");
 
     setState(() {
