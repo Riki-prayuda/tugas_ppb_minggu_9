@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
+import '../other_page/checkout_page.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class AddToOrderScrreen extends StatefulWidget {
   const AddToOrderScrreen({super.key});
@@ -10,37 +11,74 @@ class AddToOrderScrreen extends StatefulWidget {
 }
 
 class _AddToOrderScrreenState extends State<AddToOrderScrreen> {
-  bool isLoading = true;
-
-  List cartData = [];
-
-  final String cartUrl =
-      "https://api.ppb.widiarrohman.my.id/api/2026/uts/A/kelompok1/food-delivery/cart";
+  List<Map<String, dynamic>> cartData = [];
 
   @override
   void initState() {
     super.initState();
-    getCart();
+    loadCart();
   }
 
   // =====================================
-  // GET CART API
+  Future<void> loadCart() async {
+    final prefs = await SharedPreferences.getInstance();
+
+    List<String> cart = prefs.getStringList("cart") ?? [];
+
+    setState(() {
+      cartData = cart.map((e) {
+        return jsonDecode(e) as Map<String, dynamic>;
+      }).toList();
+    });
+  }
+
+  Future<void> saveCart() async {
+    final prefs = await SharedPreferences.getInstance();
+
+    List<String> cart = cartData.map((item) {
+      return jsonEncode(item);
+    }).toList();
+
+    await prefs.setStringList("cart", cart);
+  }
+
   // =====================================
-  Future<void> getCart() async {
-    try {
-      final response = await http.get(Uri.parse(cartUrl));
+  void plus(int index) {
+    setState(() {
+      cartData[index]["qty"]++;
+    });
 
-      final data = jsonDecode(response.body);
+    saveCart();
+  }
 
-      setState(() {
-        cartData = data["data"];
-        isLoading = false;
-      });
-    } catch (e) {
-      setState(() {
-        isLoading = false;
-      });
+  void minus(int index) {
+    setState(() {
+      if (cartData[index]["qty"] > 1) {
+        cartData[index]["qty"]--;
+      } else {
+        cartData.removeAt(index);
+      }
+    });
+
+    saveCart();
+  }
+
+  void deleteItem(int index) {
+    setState(() {
+      cartData.removeAt(index);
+    });
+
+    saveCart();
+  }
+
+  int totalPrice() {
+    int total = 0;
+
+    for (var item in cartData) {
+      total += (item["price"] as int) * (item["qty"] as int);
     }
+
+    return total;
   }
 
   // =====================================
@@ -49,16 +87,21 @@ class _AddToOrderScrreenState extends State<AddToOrderScrreen> {
     return Scaffold(
       backgroundColor: Colors.white,
 
-      appBar: AppBar(title: const Text("Cart"), backgroundColor: Colors.orange),
+      appBar: AppBar(
+        title: const Text("My Cart"),
+        backgroundColor: Colors.orange,
+      ),
 
-      body: isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : cartData.isEmpty
-          ? const Center(child: Text("Cart Kosong"))
+      body: cartData.isEmpty
+          ? const Center(
+              child: Text("Cart Empty", style: TextStyle(fontSize: 18)),
+            )
           : ListView.builder(
               padding: const EdgeInsets.all(16),
               itemCount: cartData.length,
               itemBuilder: (context, index) {
+                final item = cartData[index];
+
                 return Card(
                   margin: const EdgeInsets.only(bottom: 16),
                   shape: RoundedRectangleBorder(
@@ -70,25 +113,62 @@ class _AddToOrderScrreenState extends State<AddToOrderScrreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          cartData[index]["name"],
+                          item["name"],
                           style: const TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
 
-                        const SizedBox(height: 10),
+                        const SizedBox(height: 8),
 
-                        Text("Harga : Rp ${cartData[index]["price"]}"),
+                        Text("Rp ${item["price"]}"),
 
-                        const SizedBox(height: 6),
+                        const SizedBox(height: 12),
 
-                        Text("Jumlah : ${cartData[index]["count"]}"),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Row(
+                              children: [
+                                IconButton(
+                                  onPressed: () {
+                                    minus(index);
+                                  },
+                                  icon: const Icon(
+                                    Icons.remove_circle,
+                                    color: Colors.red,
+                                  ),
+                                ),
 
-                        const SizedBox(height: 6),
+                                Text(
+                                  item["qty"].toString(),
+                                  style: const TextStyle(fontSize: 16),
+                                ),
+
+                                IconButton(
+                                  onPressed: () {
+                                    plus(index);
+                                  },
+                                  icon: const Icon(
+                                    Icons.add_circle,
+                                    color: Colors.green,
+                                  ),
+                                ),
+                              ],
+                            ),
+
+                            IconButton(
+                              onPressed: () {
+                                deleteItem(index);
+                              },
+                              icon: const Icon(Icons.delete, color: Colors.red),
+                            ),
+                          ],
+                        ),
 
                         Text(
-                          "Total : Rp ${cartData[index]["total_price"]}",
+                          "Subtotal : Rp ${item["price"] * item["qty"]}",
                           style: const TextStyle(
                             color: Colors.green,
                             fontWeight: FontWeight.bold,
@@ -99,6 +179,55 @@ class _AddToOrderScrreenState extends State<AddToOrderScrreen> {
                   ),
                 );
               },
+            ),
+
+      bottomNavigationBar: cartData.isEmpty
+          ? null
+          : Container(
+              padding: const EdgeInsets.all(16),
+              color: Colors.orange,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    "Total : Rp ${totalPrice()}",
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+
+                  const SizedBox(height: 10),
+
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: cartData.isEmpty
+                          ? null
+                          : () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => const CheckoutPage(),
+                                ),
+                              ).then((value) {
+                                if (value == true) {
+                                  loadCart(); // refresh cart/keranjang belanja
+                                }
+                              });
+                            },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white,
+                      ),
+                      child: const Text(
+                        "Checkout",
+                        style: TextStyle(color: Colors.orange),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
     );
   }
