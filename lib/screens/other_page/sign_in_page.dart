@@ -17,18 +17,13 @@ class SignInScreen extends StatelessWidget {
       ),
       body: SingleChildScrollView(
         child: Padding(
-          padding:
-              const EdgeInsets.symmetric(
-            horizontal: 16,
-          ),
+          padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Column(
-            crossAxisAlignment:
-                CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const WelcomeText(
                 title: "Welcome to",
-                text:
-                    "Enter username and password to login",
+                text: "Enter username and password to login",
               ),
 
               const SignInForm(),
@@ -38,21 +33,12 @@ class SignInScreen extends StatelessWidget {
               Center(
                 child: Text.rich(
                   TextSpan(
-                    text:
-                        "Don’t have account? ",
+                    text: "Don’t have account? ",
                     children: [
                       TextSpan(
-                        text:
-                            "Create new account",
-                        style:
-                            const TextStyle(
-                          color: Color(
-                              0xFF22A45D),
-                        ),
-                        recognizer:
-                            TapGestureRecognizer()
-                              ..onTap =
-                                  () {},
+                        text: "Create new account",
+                        style: const TextStyle(color: Color(0xFF22A45D)),
+                        recognizer: TapGestureRecognizer()..onTap = () {},
                       ),
                     ],
                   ),
@@ -72,28 +58,17 @@ class SignInScreen extends StatelessWidget {
 class WelcomeText extends StatelessWidget {
   final String title, text;
 
-  const WelcomeText({
-    super.key,
-    required this.title,
-    required this.text,
-  });
+  const WelcomeText({super.key, required this.title, required this.text});
 
   @override
-  Widget build(
-      BuildContext context) {
+  Widget build(BuildContext context) {
     return Column(
-      crossAxisAlignment:
-          CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: 20),
         Text(
           title,
-          style:
-              const TextStyle(
-            fontSize: 24,
-            fontWeight:
-                FontWeight.bold,
-          ),
+          style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 8),
         Text(text),
@@ -110,20 +85,15 @@ class SignInForm extends StatefulWidget {
   const SignInForm({super.key});
 
   @override
-  State<SignInForm> createState() =>
-      _SignInFormState();
+  State<SignInForm> createState() => _SignInFormState();
 }
 
-class _SignInFormState
-    extends State<SignInForm> {
-  final _formKey =
-      GlobalKey<FormState>();
+class _SignInFormState extends State<SignInForm> {
+  final _formKey = GlobalKey<FormState>();
 
-  final usernameController =
-      TextEditingController();
+  final usernameController = TextEditingController();
 
-  final passwordController =
-      TextEditingController();
+  final passwordController = TextEditingController();
 
   bool isLoading = false;
   bool obscure = true;
@@ -140,36 +110,24 @@ class _SignInFormState
         "https://api.ppb.widiarrohman.my.id/api/2026/uts/A/kelompok1/food-delivery/login";
 
     try {
-      final response =
-          await http.post(
+      final response = await http.post(
         Uri.parse(url),
-        headers: {
-          "Content-Type":
-              "application/json",
-        },
+        headers: {"Content-Type": "application/json"},
         body: jsonEncode({
-          "username":
-              usernameController.text,
-          "password":
-              passwordController.text,
+          "username": usernameController.text,
+          "password": passwordController.text,
         }),
       );
 
-      final data =
-          jsonDecode(response.body);
+      final data = jsonDecode(response.body);
 
       setState(() {
         isLoading = false;
       });
 
-      ScaffoldMessenger.of(context)
-          .showSnackBar(
-        SnackBar(
-          content: Text(
-            data["message"],
-          ),
-        ),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(data["message"])));
 
       // TOKEN
       print(data["token"]);
@@ -178,95 +136,56 @@ class _SignInFormState
         isLoading = false;
       });
 
-      ScaffoldMessenger.of(context)
-          .showSnackBar(
-        SnackBar(
-          content:
-              Text(e.toString()),
-        ),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(e.toString())));
     }
   }
 
   @override
-  Widget build(
-      BuildContext context) {
+  Widget build(BuildContext context) {
     return Form(
       key: _formKey,
       child: Column(
         children: [
           // USERNAME
           TextFormField(
-            controller:
-                usernameController,
-            decoration:
-                const InputDecoration(
-              hintText:
-                  "Username",
-            ),
+            controller: usernameController,
+            decoration: const InputDecoration(hintText: "Username"),
           ),
 
-          const SizedBox(
-              height: 16),
+          const SizedBox(height: 16),
 
           // PASSWORD
           TextFormField(
-            controller:
-                passwordController,
-            obscureText:
-                obscure,
-            decoration:
-                InputDecoration(
-              hintText:
-                  "Password",
-              suffixIcon:
-                  IconButton(
+            controller: passwordController,
+            obscureText: obscure,
+            decoration: InputDecoration(
+              hintText: "Password",
+              suffixIcon: IconButton(
                 onPressed: () {
                   setState(() {
-                    obscure =
-                        !obscure;
+                    obscure = !obscure;
                   });
                 },
-                icon: Icon(
-                  obscure
-                      ? Icons
-                          .visibility_off
-                      : Icons
-                          .visibility,
-                ),
+                icon: Icon(obscure ? Icons.visibility_off : Icons.visibility),
               ),
             ),
           ),
 
-          const SizedBox(
-              height: 20),
+          const SizedBox(height: 20),
 
           // BUTTON LOGIN
           SizedBox(
-            width:
-                double.infinity,
-            child:
-                ElevatedButton(
-              onPressed:
-                  isLoading
-                      ? null
-                      : login,
-              style:
-                  ElevatedButton
-                      .styleFrom(
-                backgroundColor:
-                    const Color(
-                        0xFF22A45D),
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: isLoading ? null : login,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF22A45D),
               ),
-              child:
-                  isLoading
-                      ? const CircularProgressIndicator(
-                          color: Colors
-                              .white,
-                        )
-                      : const Text(
-                          "Sign In",
-                        ),
+              child: isLoading
+                  ? const CircularProgressIndicator(color: Colors.white)
+                  : const Text("Sign In"),
             ),
           ),
         ],
