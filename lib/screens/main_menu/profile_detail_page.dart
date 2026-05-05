@@ -17,9 +17,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
   // DATA USER
   // ===============================
   String? profileImagePath;
-  String userName = "Widi User";
-  String userEmail = "user@email.com";
-  String userAddress = "Palangkaraya, Indonesia";
+  String userName = "Kelompok 1";
+  String userEmail = "Hihihi@gmail.com";
+  String userAddress = "Ketapang,Kalimantan Barat Indonesia";
 
   bool notificationEnabled = true;
 
@@ -37,11 +37,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final prefs = await SharedPreferences.getInstance();
 
     setState(() {
-      userName = prefs.getString("userName") ?? "Widi User";
+      userName = prefs.getString("userName") ?? "Kelompok 1";
 
-      userEmail = prefs.getString("userEmail") ?? "user@email.com";
+      userEmail = prefs.getString("userEmail") ?? "Hihihi@gmail.com";
 
-      userAddress = prefs.getString("userAddress") ?? "Palangkaraya, Indonesia";
+      userAddress =
+          prefs.getString("userAddress") ??
+          "Ketapang,Kalimantan Barat Indonesia";
 
       notificationEnabled = prefs.getBool("notif") ?? true;
 
@@ -333,6 +335,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  //intan
   void paymentMethodDialog() {
     List<String> bankList = ["BCA", "BRI", "BNI", "Mandiri"];
 
@@ -524,7 +527,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
               Placemark place = placemarks.first;
 
-              // 🔥 FULL ADDRESS + REGION
+              // FULL ADDRESS + REGION
               String fullAddress = [
                 place.street,
                 place.subLocality,
@@ -611,7 +614,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     userAddress = loc.text;
                   });
 
-                  saveData(); // 🔥 SIMPAN
+                  saveData(); // SIMPAN
 
                   Navigator.pop(context);
 
@@ -705,6 +708,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  //nazla
   void logout() {
     showDialog(
       context: context,
@@ -731,7 +735,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-    void showSnack(String message) {
+  void showSnack(String message) {
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text(message)));
