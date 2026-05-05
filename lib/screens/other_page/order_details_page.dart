@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'order_detail_item_page.dart';
 
 class OrderDetailsScreen extends StatefulWidget {
   const OrderDetailsScreen({super.key});
@@ -11,181 +11,99 @@ class OrderDetailsScreen extends StatefulWidget {
 }
 
 class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
-  final String apiUrl =
-      "https://api.ppb.widiarrohman.my.id/api/2026/uts/A/kelompok1/food-delivery/cart";
-
-  List<Map<String, dynamic>> orderItems = [];
-
+  List<Map<String, dynamic>> orders = [];
   bool isLoading = true;
-  int subtotal = 0;
 
   @override
   void initState() {
     super.initState();
     loadOrder();
-    fetchCartFromAPI();
   }
 
-  // ==========================
-  // LOAD ORDER (LOCAL STORAGE)
-  // ==========================
   Future<void> loadOrder() async {
     final prefs = await SharedPreferences.getInstance();
 
-    List<String> order = prefs.getStringList("order") ?? [];
+    List<String> storedOrders = prefs.getStringList("orders") ?? [];
 
-    orderItems = order
-        .map((e) => jsonDecode(e) as Map<String, dynamic>)
-        .toList();
+    List<Map<String, dynamic>> tempOrders = [];
 
-    subtotal = 0;
+    for (var e in storedOrders) {
+      Map<String, dynamic> order = jsonDecode(e) as Map<String, dynamic>;
 
-    for (var item in orderItems) {
-      subtotal +=
-          int.parse(item["price"].toString()) *
-          int.parse(item["qty"].toString());
+      DateTime orderTime = DateTime.parse(order["time"]);
+
+      // AUTO UPDATE STATUS
+      if (DateTime.now().difference(orderTime).inSeconds > 10) {
+        order["status"] = "Done";
+      }
+
+      tempOrders.add(order);
     }
+
+    // SIMPAN STATUS UPDATE
+    await prefs.setStringList(
+      "orders",
+      tempOrders.map((e) => jsonEncode(e)).toList(),
+    );
+
+    orders = tempOrders;
 
     setState(() {
       isLoading = false;
     });
   }
 
-  // ==========================
-  // FETCH API
-  // ==========================
-  Future<void> fetchCartFromAPI() async {
-    try {
-      final response = await http.get(Uri.parse(apiUrl));
+  Color getStatusColor(String status) {
+    if (status == "Done") return Colors.green;
+    return Colors.orange;
+  }
 
-      final data = jsonDecode(response.body);
-
-      print("API DATA: $data"); // debug
-    } catch (e) {
-      print("API error");
+  Icon getStatusIcon(String status) {
+    if (status == "Done") {
+      return const Icon(Icons.check_circle, color: Colors.green, size: 18);
     }
+    return const Icon(Icons.access_time, color: Colors.orange, size: 18);
   }
 
-  // ==========================
-  String rupiah(int value) {
-    return "Rp ${value.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => "${m[1]}.")}";
-  }
-
-  // ==========================
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xffF8F9FD),
 
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        centerTitle: true,
-        title: const Text(
-          "Order Details",
-          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
-        ),
-      ),
+      appBar: AppBar(title: const Text("Order History"), centerTitle: true),
 
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
-          : orderItems.isEmpty
-          ? const Center(
-              child: Text("Belum ada pesanan", style: TextStyle(fontSize: 18)),
-            )
-          : Padding(
+          : orders.isEmpty
+          ? const Center(child: Text("Belum ada pesanan"))
+          : ListView.builder(
               padding: const EdgeInsets.all(16),
-              child: Column(
-                children: [
-                  /// LIST ORDER
-                  Expanded(
-                    child: ListView.builder(
-                      itemCount: orderItems.length,
-                      itemBuilder: (context, index) {
-                        final item = orderItems[index];
+              itemCount: orders.length,
+              itemBuilder: (context, index) {
+                final order = orders[index];
+                List items = order["items"];
 
-                        int total =
-                            int.parse(item["price"].toString()) *
-                            int.parse(item["qty"].toString());
+                int total = 0;
 
-                        return Container(
-                          margin: const EdgeInsets.only(bottom: 16),
-                          padding: const EdgeInsets.all(14),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(18),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.05),
-                                blurRadius: 8,
-                              ),
-                            ],
-                          ),
-                          child: Row(
-                            children: [
-                              /// QTY
-                              Container(
-                                width: 40,
-                                height: 40,
-                                alignment: Alignment.center,
-                                decoration: BoxDecoration(
-                                  color: Colors.orange.withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Text(
-                                  item["qty"].toString(),
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.orange,
-                                  ),
-                                ),
-                              ),
+                for (var e in items) {
+                  final item = jsonDecode(e);
+                  total +=
+                      int.parse(item["price"].toString()) *
+                      int.parse(item["qty"].toString());
+                }
 
-                              const SizedBox(width: 14),
-
-                              /// INFO
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      item["name"],
-                                      style: const TextStyle(
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 6),
-                                    Text(
-                                      rupiah(
-                                        int.parse(item["price"].toString()),
-                                      ),
-                                      style: const TextStyle(
-                                        color: Colors.grey,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-
-                              /// TOTAL
-                              Text(
-                                rupiah(total),
-                                style: const TextStyle(
-                                  color: Colors.deepOrange,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ],
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-
-                  /// SUMMARY
-                  Container(
-                    padding: const EdgeInsets.all(18),
+                return GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => OrderDetailItemPage(order: order),
+                      ),
+                    );
+                  },
+                  child: Container(
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(20),
@@ -197,39 +115,60 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                       ],
                     ),
                     child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        rowPrice("Subtotal", rupiah(subtotal)),
+                        /// HEADER
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              "Order #${index + 1}",
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+
+                            /// STATUS DAN ICON
+                            Row(
+                              children: [
+                                getStatusIcon(order["status"]),
+                                const SizedBox(width: 6),
+                                Text(
+                                  order["status"],
+                                  style: TextStyle(
+                                    color: getStatusColor(order["status"]),
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+
+                        const SizedBox(height: 6),
+
+                        /// DATE
+                        Text(
+                          order["time"],
+                          style: const TextStyle(color: Colors.grey),
+                        ),
+
                         const SizedBox(height: 10),
-                        rowPrice("Delivery", "Free"),
-                        const Divider(height: 25),
-                        rowPrice("Total", rupiah(subtotal), bold: true),
+
+                        /// TOTAL
+                        Text(
+                          "Total: Rp $total",
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.deepOrange,
+                          ),
+                        ),
                       ],
                     ),
                   ),
-                ],
-              ),
+                );
+              },
             ),
-    );
-  }
-
-  Widget rowPrice(String title, String value, {bool bold = false}) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          title,
-          style: TextStyle(
-            fontWeight: bold ? FontWeight.bold : FontWeight.normal,
-          ),
-        ),
-        Text(
-          value,
-          style: TextStyle(
-            fontWeight: bold ? FontWeight.bold : FontWeight.normal,
-            color: bold ? Colors.deepOrange : Colors.black,
-          ),
-        ),
-      ],
     );
   }
 }
