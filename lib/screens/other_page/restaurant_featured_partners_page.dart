@@ -1,34 +1,26 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
+import '../main_menu/add_to_order_page.dart';
 
 class FeaturedScreen extends StatelessWidget {
   const FeaturedScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        title: const Text("Menu API"),
-        backgroundColor: Colors.orange,
-      ),
-      body: const Body(),
-    );
+    return const RestaurantPage();
   }
 }
 
-// =========================================
-// BODY
-// =========================================
-class Body extends StatefulWidget {
-  const Body({super.key});
+class RestaurantPage extends StatefulWidget {
+  const RestaurantPage({super.key});
 
   @override
-  State<Body> createState() => _BodyState();
+  State<RestaurantPage> createState() => _RestaurantPageState();
 }
 
-class _BodyState extends State<Body> {
+class _RestaurantPageState extends State<RestaurantPage> {
   bool isLoading = true;
   List menuData = [];
 
@@ -41,13 +33,12 @@ class _BodyState extends State<Body> {
     getMenu();
   }
 
-  // =========================================
+  // ============================
   // GET DATA API
-  // =========================================
+  // ============================
   Future<void> getMenu() async {
     try {
       final response = await http.get(Uri.parse(menuUrl));
-
       final data = jsonDecode(response.body);
 
       setState(() {
@@ -61,92 +52,142 @@ class _BodyState extends State<Body> {
     }
   }
 
-  // =========================================
+  // ============================
+  // ADD TO CART
+  // ============================
+  Future<void> addToCart(String name, int price) async {
+    final prefs = await SharedPreferences.getInstance();
+    List<String> cart = prefs.getStringList("cart") ?? [];
+
+    bool found = false;
+
+    for (int i = 0; i < cart.length; i++) {
+      Map item = jsonDecode(cart[i]);
+
+      if (item["name"] == name) {
+        item["qty"] = item["qty"] + 1;
+        cart[i] = jsonEncode(item);
+        found = true;
+      }
+    }
+
+    if (!found) {
+      cart.add(jsonEncode({"name": name, "price": price, "qty": 1}));
+    }
+
+    await prefs.setStringList("cart", cart);
+
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text("$name added to cart")));
+  }
+
+  // ============================
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: isLoading
-          ? const Center(
-              child: CircularProgressIndicator(),
-            )
+    return Scaffold(
+      backgroundColor: Colors.white,
+
+      appBar: AppBar(
+        title: const Text("Restaurant"),
+        backgroundColor: Colors.orange,
+        actions: [
+          IconButton(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const AddToOrderScrreen()),
+              );
+            },
+            icon: const Icon(Icons.shopping_cart),
+          ),
+        ],
+      ),
+
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator())
           : ListView.builder(
               padding: const EdgeInsets.all(16),
               itemCount: menuData.length,
               itemBuilder: (context, index) {
+                final item = menuData[index];
+                String imageUrl = item["image"] ?? "";
+
                 return Card(
-                  margin:
-                      const EdgeInsets.only(bottom: 16),
+                  margin: const EdgeInsets.only(bottom: 16),
                   shape: RoundedRectangleBorder(
-                    borderRadius:
-                        BorderRadius.circular(14),
+                    borderRadius: BorderRadius.circular(14),
                   ),
                   child: Column(
-                    crossAxisAlignment:
-                        CrossAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       ClipRRect(
-                        borderRadius:
-                            const BorderRadius.only(
-                          topLeft:
-                              Radius.circular(14),
-                          topRight:
-                              Radius.circular(14),
+                        borderRadius: const BorderRadius.only(
+                          topLeft: Radius.circular(14),
+                          topRight: Radius.circular(14),
                         ),
                         child: Image.network(
-                          menuData[index]["image"],
+                          imageUrl,
                           height: 180,
                           width: double.infinity,
                           fit: BoxFit.cover,
+
+                          // loading
+                          loadingBuilder: (context, child, progress) {
+                            if (progress == null) return child;
+                            return const SizedBox(
+                              height: 180,
+                              child: Center(child: CircularProgressIndicator()),
+                            );
+                          },
+
+                          errorBuilder: (context, error, stackTrace) {
+                            return Container(
+                              height: 180,
+                              color: Colors.grey[300],
+                              child: const Center(
+                                child: Icon(Icons.broken_image, size: 50),
+                              ),
+                            );
+                          },
                         ),
                       ),
 
+                      // ============================
+                      // CONTENT
+                      // ============================
                       Padding(
-                        padding:
-                            const EdgeInsets.all(12),
+                        padding: const EdgeInsets.all(12),
                         child: Column(
-                          crossAxisAlignment:
-                              CrossAxisAlignment
-                                  .start,
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              menuData[index]["name"],
-                              style:
-                                  const TextStyle(
+                              item["name"],
+                              style: const TextStyle(
                                 fontSize: 18,
-                                fontWeight:
-                                    FontWeight
-                                        .bold,
+                                fontWeight: FontWeight.bold,
                               ),
                             ),
 
-                            const SizedBox(
-                                height: 8),
+                            const SizedBox(height: 6),
 
-                            Text(
-                              "Harga : Rp ${menuData[index]["price"]}",
-                              style:
-                                  const TextStyle(
-                                fontSize: 15,
+                            Text("Rp ${item["price"]}"),
+
+                            const SizedBox(height: 10),
+
+                            SizedBox(
+                              width: double.infinity,
+                              child: ElevatedButton(
+                                onPressed: () {
+                                  addToCart(item["name"], item["price"]);
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.orange,
+                                ),
+                                child: const Text("Add To Cart"),
                               ),
-                            ),
-
-                            const SizedBox(
-                                height: 6),
-
-                            Row(
-                              children: [
-                                const Icon(
-                                  Icons.star,
-                                  color: Colors.orange,
-                                  size: 18,
-                                ),
-                                const SizedBox(
-                                    width: 4),
-                                Text(
-                                  menuData[index]["star"]
-                                      .toString(),
-                                ),
-                              ],
                             ),
                           ],
                         ),
